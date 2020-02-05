@@ -1,0 +1,296 @@
+import requests
+import csv
+from bs4 import BeautifulSoup
+import os
+import re
+
+
+class Ford:
+    def __init__(self):
+        self.model_list = ['fusion', 'escape', 'edge', 'transit-connect', 'transit', 'taurus', 'ranger', 'mustang',
+                           'fusion-hybrid', 'fusion-energi', 'focus-st', 'focus-electric', 'focus', 'flex', 'fiesta',
+                           'f-550', 'f-450', 'f-350', 'f-250', 'f-150', 'explorer', 'expedition', 'ecosport', 'e-450',
+                           'super-duty', 'mkx', 'gt', 'e-series', 'e-350', 'c-max-hybrid', 'c-max', 'c-max-energi',
+                           'MKX-Black-Label', 'shelby-gt350-and-gt50r', 'mkx-black-label', 'fiesta-st', 'e-250',
+                           'e-150', 'mustang-boss-302', 'f-series-super-duty', 'f-150-raptor', 'f-150-lariat',
+                           'f-150-harley-davidson', 'mustang-svt', 'mustang-shelby-gt500', 'escape-hybrid', 'milan',
+                           'mariner', 'mountaineer', 'explorer-sport-trac', 'taurus-x', 'sable', 'freestyle',
+                           'five-hundred']
+        self.valid_models = ['fusion', 'transit', 'taurus', 'mustang', 'focus', 'fiesta']
+        self.valid_section_list = []
+        self.csv_header = [['YEAR', 'MAKE', 'MODEL', 'SECTION', 'TITLE', 'DESCRIPTION', 'IMAGE']]
+
+    def get_ford_models(self):
+        path = './../fetch_videos_from_each_site/ford/output/Ford_how_to_video_Sorted.csv'
+        with open(path, "r", encoding="utf-8") as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            line_count = 0
+            model_list_from_file = []
+            for row in csv_reader:
+                if line_count < 1:
+                    line_count += 1
+                else:
+                    print(line_count, row[2])
+                    if not row[2] in model_list_from_file:
+                        model_list_from_file.append(row[2])
+                    line_count += 1
+        print(model_list_from_file)
+
+    def section_list(self, year, model):
+        url = 'https://web.archive.org/web/%s0831231919/http://www.ford.com/cars/%s/features/' % (year, model)
+        print(url)
+        res_text = requests.get(url=url).text
+        soup = BeautifulSoup(res_text, 'html.parser')
+        try:
+            nameplate = soup.select('div[id="nameplate-feature-nav"]')[0]
+            category1 = nameplate.select('div[id="category#FeatureCategory1"]')[0].find_all('h3')[0].text
+            category2 = nameplate.select('div[id="category#FeatureCategory2"]')[0].find_all('h3')[0].text
+            category3 = nameplate.select('div[id="category#FeatureCategory3"]')[0].find_all('h3')[0].text
+            category4 = nameplate.select('div[id="category#FeatureCategory4"]')[0].find_all('h3')[0].text
+            return [category1, category2, category3, category4]
+        except Exception as e:
+            print(e)
+            return None
+
+    def widget_request(self, year, model, key):
+        url = 'https://web.archive.org/web/%s0605020947/http://www.ford.com/cars/%s/features/FeatureCategory%s/' \
+              '?widget=nameplate-features-content-area' % (year, model, key)
+        res = requests.get(url=url)
+        if res.status_code == 200:
+            soup = BeautifulSoup(res.text, 'html.parser')
+            nameplates = soup.select('div[id="nameplate-feature-tiles"]')[0]
+            div_tags = nameplates.div.find_all(recursive=False)
+            return div_tags
+        else:
+            return None
+
+    def write_direct_csv(self, lines, filename):
+        with open('output/%s' % filename, 'a', encoding="utf-8", newline='') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',')
+            writer.writerows(lines)
+        csv_file.close()
+
+    def write_csv(self, lines, filename):
+        if not os.path.isdir('output'):
+            os.mkdir('output')
+        if not os.path.isfile('output/%s' % filename):
+            self.write_direct_csv(lines=self.csv_header, filename=filename)
+        self.write_direct_csv(lines=lines, filename=filename)
+
+    def loop(self):
+        for year in range(2010, 2018):
+            for model in self.valid_models:
+                sections = self.section_list(year=2013, model=model)
+                print(sections)
+                exit()
+                if sections is not None:
+                    for key, section in enumerate(sections, start=1):
+                        utilities = self.widget_request(year, model, key)
+                        if utilities is not None:
+                            for utility in utilities:
+                                if utility.has_attr('id'):
+                                    continue
+                                try:
+                                    image = utility.select('img')[0]['src']
+                                    if not 'https' in image:
+                                        continue
+                                    if not 'https://web.archive.org/' in image:
+                                        image += 'https://web.archive.org' + image
+                                    title = utility.select('h3')[0].text
+                                    description = utility.select('p')[0].text
+                                    print(year, 'FORD', model, section, title, description, image)
+                                    self.write_csv(lines=[[year, 'FORD', model, section, title, description, image]],
+                                                   filename='Ford_Features.csv')
+                                except:
+                                    continue
+
+
+class Acura:
+    def __init__(self):
+        pass
+
+
+class Audi:
+    def __init__(self):
+        pass
+
+
+class Buick:
+    def __init__(self):
+        self.csv_header = [['YEAR', 'MAKE', 'MODEL', 'SECTION', 'TITLE', 'DESCRIPTION', 'IMAGE']]
+
+    def write_txt_url(self, lines, filename):
+        with open(filename, "a") as my_file:
+            for line in lines:
+                my_file.write(line + '\n')
+
+    def read_url(self):
+        file = open('urls.txt', 'r')
+        url_array = file.read().split('\n')
+        return url_array[:-1]
+
+    def write_direct_csv(self, lines, filename):
+        with open('output/%s' % filename, 'a', encoding="utf-8", newline='') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',')
+            writer.writerows(lines)
+        csv_file.close()
+
+    def write_csv(self, lines, filename):
+        if not os.path.isdir('output'):
+            os.mkdir('output')
+        if not os.path.isfile('output/%s' % filename):
+            self.write_direct_csv(lines=self.csv_header, filename=filename)
+        self.write_direct_csv(lines=lines, filename=filename)
+
+    def read_csv(self):
+        records = []
+        file = "output/2011_2013.csv"
+        with open(file, "r", encoding='utf-8') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            line_count = 0
+            for row in csv_reader:
+                print(row)
+                if line_count < 1:
+                    line_count += 1
+                    continue
+                count = 0
+                for x in row:
+                    if len(x) > 1:
+                        count += 1
+                if count == 7:
+                    records.append(row)
+        records.sort(key=lambda x: (x[0], x[2]))
+        return records
+
+    def vehicle_tab(self, year):
+        url = 'https://web.archive.org/web/%s1109064802/http://www.buick.com/' % year
+        response = requests.get(url=url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            mds = soup.select('div[id="mds-cmp-1stlevelnavigation"]')[0]
+            ul = mds.select('ul>li:first-child>ul>li.ext')
+            return ul
+
+    def get_request_urls(self):
+        for year in range(2011, 2021):
+            navigation = self.vehicle_tab(year=year)
+            lines = []
+            for model_soup in navigation:
+                model = model_soup.find('a').text
+                href = 'https://web.archive.org%s' % model_soup.find('a')['href'].strip()
+                lines.append(href)
+            self.write_txt_url(lines=lines)
+        read_lines = self.read_url()
+        for url in read_lines:
+            for url_year in range(2011, 2021):
+                request_url = (url[:-len(url.split('/')[-1])] + '%s-' + url.split('/')[-1]) % url_year
+                print(request_url)
+                if requests.get(url=request_url).status_code == 200:
+                    print("=================", request_url, "=========================")
+                    self.write_txt_url([request_url])
+
+    def get_year(self, url):
+        try:
+            individual_soup = BeautifulSoup(requests.get(url=url).text, 'html.parser')
+            navigation = individual_soup.select('div[id="mds-cmp-2ndlevelnavigation"]>dl>dt>a>span')[0].text
+            year = navigation[0:4].strip()
+            model = navigation[4:].strip()
+            return year, model
+        except:
+            return None
+
+    def get_year_again(self, url):
+        try:
+            soup = BeautifulSoup(requests.get(url=url).text, 'html.parser')
+            wrapper = soup.select('#mhc1 .mh_content_wrapper .mh_title_1 span>span')
+            year = wrapper[0].text.strip()
+            model = wrapper[1].text.strip()
+            return year, model
+        except:
+            return None
+
+    def get_section(self, url):
+        soup = BeautifulSoup(requests.get(url=url).text, 'html.parser')
+        this_page = soup.find(text=re.compile(r'ON THIS PAGE')).parent
+        if this_page.name == 'span':
+            h2 = this_page.parent.findNext('h2')
+            span = h2.find('span').text
+            return span
+        # return this_page
+
+    def tag_visible(element):
+        from bs4.element import Comment
+        if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
+            return False
+        if isinstance(element, Comment):
+            return False
+        return True
+
+    def from_2014(self):
+        for year in range(2015, 2018):
+            url = 'https://web.archive.org/web/%s0228093211/http://www.buick.com/' % year
+            soup = BeautifulSoup(requests.get(url).text, 'html.parser')
+            area_footer = soup.select('#mds-area-footer')[0]\
+                .find('div', {'class': 'mds-area-pf6 nav_footer_1 mod modNav_footer_1'})\
+                .find('div', {'class': 'mds-cmp-navigation06 nav_sitemap_2 mod modNav_sitemap_2'})\
+                .find('ul').select('li>a')
+            for area in area_footer:
+                area_array = area.text.split(' ')
+                if len(area_array) == 2:
+                    model = area_array[1]
+                else:
+                    model = area.text
+                sub_url = 'https://web.archive.org%s' % area['href']
+                if year == 2014:
+                    sub_soup = BeautifulSoup(requests.get(url=sub_url).text.replace('<figure>', '').replace('</figure>', ''), 'html.parser')
+                else:
+                    sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
+                wells = sub_soup.find_all('div', {'class': 'cnt_well_c2 section'})
+                for well in wells:
+                    lis = well.select('ul li')
+                    for li in lis:
+                        if li.h2:
+                            section = li.h2.text.split('/')[0].strip()
+                            if len(li.h2.text.split('/')) > 1:
+                                title = li.h2.text.split('/')[1].strip()
+                            else:
+                                title = ''
+                            if section.lower() == 'tools':
+                                continue
+                        description_element = li.find('div', {'class': 'caption txtWrp'})
+                        description = description_element.getText().strip() if description_element else ""
+                        image_element = li.find('div', {'class': 'fs-content'})
+                        initial_image = image_element.find('img')['src'] if image_element else ''
+                        if initial_image != '' and initial_image[-4:] != '.jpg':
+                            initial_image = image_element.find('img')['data-orig-src']
+                        image = 'https://web.archive.org%s' % initial_image
+                        if len(image) < len('https://web.archive.org') + 2:
+                            continue
+                        self.write_csv(lines=[[str(year), 'Buick', model, section, title, description, image]], filename='2011_2017.csv')
+                        print(year, model, section, title, description, image)
+    def add_2011_2017(self):
+        f_lines = self.read_csv()
+        self.write_csv(lines=f_lines, filename='2011_2017.csv')
+        self.from_2014()
+
+
+    def read_write(self):
+        lines = self.read_csv()
+        self.write_csv(lines=lines, filename='2011_2013.csv')
+
+
+
+
+
+
+
+
+
+
+print("=======================Start=============================")
+ford = Ford()
+acura = Acura()
+audi = Audi()
+buick = Buick()
+buick.add_2011_2017()
+print("=======================The End===========================")
