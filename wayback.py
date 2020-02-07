@@ -107,7 +107,494 @@ class Ford:
 
 class Acura:
     def __init__(self):
-        pass
+        self.ford_class = Ford()
+        self.buick_class = Buick()
+
+    def get_2010(self, filename):
+        models = ['RL', 'TL', 'TSX', 'ZDX', 'MDX', 'RDX']
+        for model in models:
+            feature_url = 'https://web.archive.org/web/20100117232755/http://www.acura.com/Features.aspx?model=%s&modelYear=2010' % model
+            feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+            year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].text.split(' ')[0]
+            uls = feature_soup.select('#content-wrap > div.content-body > ul > li > a')
+            context_urls = []
+            for ul in uls:
+                context_url = 'https://web.archive.org' + ul['href'][:ul['href'].find('#')]
+                if context_url in context_urls:
+                    continue
+                context_urls.append(context_url)
+                result = re.search('&context=(.*)#', ul['href'])
+                section = result.group(1).replace('+_+', ' ').strip()
+                context_soup = BeautifulSoup(requests.get(url=context_url).text, 'html.parser')
+                feature_group_tags = context_soup.select('#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group > td > a')
+                for feature_group_tag in feature_group_tags:
+                    a_tag_id = feature_group_tag['href'].strip()
+                    if len(a_tag_id) > 1:
+                        search_key = {'id': a_tag_id.replace('#', '').strip() + 'X'}
+                        dom_with_id = context_soup.find(**search_key)
+                        span = dom_with_id.find('h5').find('span')
+                        _ = span.extract()
+                        title = dom_with_id.find('h5').get_text().strip()
+                        try:
+                            image = 'https://web.archive.org' + dom_with_id.find('img')['src']
+                        except:
+                            image = 'https://web.archive.org' + dom_with_id.find('img')['name']
+                        description = dom_with_id.find('p').get_text()
+                        line = [year, 'ACURA', model, section, title, description, image]
+                        print(line)
+                        ford_class = Ford()
+                        ford_class.write_csv(lines=[line], filename=filename)
+
+    def get_2011(self, filename):
+        models = ['RL', 'TL', 'TSX', 'TSX Sport Wagon', 'ZDX', 'MDX', 'RDX']
+        ford_class = Ford()
+        def get_features(model):
+            try:
+                feature_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Features.aspx?model=%s&modelYear=2011' % model
+                feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+                year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                feature_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Features.aspx?model=%s' % model
+                feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+                year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            lis = feature_soup.select('#content-wrap > div.content-body > ul > li')
+            for li in lis:
+                section = li.find('h4').get_text()
+                feature_group_url = 'https://web.archive.org/web/20110227065539/http://www.acura.com/Features.aspx?model=%s&modelYear=2011&context=%s' % (
+                model, section)
+                soup = BeautifulSoup(requests.get(url=feature_group_url).text, 'html.parser')
+                titles_dom = soup.select(
+                    '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group')
+                for title_dom in titles_dom:
+                    title = title_dom.select('td.feature-name > a > span')[0].text.strip().replace('.', '').replace('-',
+                                                                                                                    '').replace(
+                        ',', '').replace('/', ' ')
+                    search_id = '_'.join(str(x.lower()) for x in title.split(' ')).replace('&', '') + 'X'
+                    search_key = {'id': search_id}
+                    section_dom = soup.find(**search_key)
+                    if section_dom.find('img').has_attr('src'):
+                        img = 'https://web.archive.org' + section_dom.find('img')['src']
+                    else:
+                        img = 'https://web.archive.org' + section_dom.find('img')['name']
+                    description = section_dom.find('p').get_text()
+                    line = [year, 'ACURA', model, section, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        def get_accessories(model):
+            try:
+                accessory_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2011' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                accessory_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Accessories.aspx?model=%s' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            sections = accessory_soup.select(
+                '#content-wrap > div.content-header > div.content-header-begin.has-packages-electronics > ul > li > a > span')
+            for section in sections:
+                if section.text == 'Overview':
+                    continue
+                sub_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2011&context=%s' % (model, section.text.lower())
+                sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
+                accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
+                for accessory_list in accessory_lists:
+                    title = accessory_list.select('span > span.accessories-link > a')[0].get_text()
+                    span_a = accessory_list.select('span > span.accessories-link > a')[0]
+                    _ = span_a.extract()
+                    description = accessory_list.select('span > span.accessories-link')[0].parent.find(text=True)
+                    img = 'https://web.archive.org' + accessory_list.select('a > img')[0]['src']
+                    line = [year, 'ACURA', model, section.text, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        for model in models:
+            get_features(model=model)
+            get_accessories(model)
+
+    def get_2012(self, filename):
+        models = ['RL', 'TL', 'TSX', 'TSX Sport Wagon', 'ZDX', 'MDX', 'RDX']
+        ford_class = Ford()
+
+        def get_features(model):
+            feature_url = 'https://web.archive.org/web/20120114062637/http://www.acura.com/Features.aspx?model=%s&modelYear=2012' % model
+            feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+            year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            lis = feature_soup.select('#content-wrap > div.content-body > ul > li')
+            for li in lis:
+                section = li.find('h4').get_text()
+                feature_group_url = 'https://web.archive.org/web/20120114062637/http://www.acura.com/Features.aspx?model=%s&modelYear=2012&context=%s' % (
+                    model, section)
+                soup = BeautifulSoup(requests.get(url=feature_group_url).text, 'html.parser')
+                titles_dom = soup.select(
+                    '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group')
+                for title_dom in titles_dom:
+                    title = title_dom.select('td.feature-name > a > span')[0].text.strip().replace('.', '').replace('-',
+                                                                                                                    '').replace(
+                        ',', '').replace('/', ' ')
+                    search_id = '_'.join(str(x.lower()) for x in title.split(' ')).replace('&', '') + 'X'
+                    search_key = {'id': search_id}
+                    section_dom = soup.find(**search_key)
+                    if section_dom.find('img').has_attr('src'):
+                        img = 'https://web.archive.org' + section_dom.find('img')['src']
+                    else:
+                        img = 'https://web.archive.org' + section_dom.find('img')['name']
+                    description = section_dom.find('p').get_text()
+                    line = [year, 'ACURA', model, section, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        def get_accessories(model):
+            accessory_url = 'https://web.archive.org/web/20120227042758/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2012' % model
+            accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+            year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            sections = accessory_soup.select(
+                '#content-wrap > div.content-header > div.content-header-begin.has-packages-electronics > ul > li > a > span')
+            for section in sections:
+                if section.text == 'Overview':
+                    continue
+                sub_url = 'https://web.archive.org/web/20120227042758/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2012&context=%s' % (
+                model, section.text.lower())
+                sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
+                accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
+                for accessory_list in accessory_lists:
+                    title = accessory_list.select('span > span.accessories-link > a')[0].get_text()
+                    span_a = accessory_list.select('span > span.accessories-link > a')[0]
+                    _ = span_a.extract()
+                    description = accessory_list.select('span > span.accessories-link')[0].parent.find(text=True)
+                    img = 'https://web.archive.org' + accessory_list.select('a > img')[0]['src']
+                    line = [year, 'ACURA', model, section.text, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        for model in models:
+            get_features(model=model)
+            get_accessories(model)
+
+    def get_2013(self, filename):
+        models = ['TL', 'TSX', 'TSX Sport Wagon', 'ILX', 'ZDX', 'MDX', 'RDX']
+        ford_class = Ford()
+
+        def get_features(model):
+            feature_url = 'https://web.archive.org/web/20130124121414/http://www.acura.com/Features.aspx?model=%s&modelYear=2013' % model
+            feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+            year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            lis = feature_soup.select('#content-wrap > div.content-body > ul > li')
+            for li in lis:
+                section = li.find('h4').get_text()
+                feature_group_url = 'https://web.archive.org/web/20130124121414/http://www.acura.com/Features.aspx?model=%s&modelYear=2013&context=%s' % (
+                    model, section)
+                soup = BeautifulSoup(requests.get(url=feature_group_url).text, 'html.parser')
+                titles_dom = soup.select(
+                    '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group')
+                for title_dom in titles_dom:
+                    title = title_dom.select('td.feature-name > a > span')[0].text.strip().replace('.', '').replace('-',
+                                                                                                                    '').replace(
+                        ',', '').replace('/', ' ').replace('(', '').replace(')', '').replace('™', '')
+                    search_id = '_'.join(str(x.lower()) for x in title.split(' ')).replace('&', '') + 'X'
+                    search_key = {'id': search_id}
+                    section_dom = soup.find(**search_key)
+                    if section_dom.find('img').has_attr('src'):
+                        img = 'https://web.archive.org' + section_dom.find('img')['src']
+                    else:
+                        img = 'https://web.archive.org' + section_dom.find('img')['name']
+                    description = section_dom.find('p').get_text()
+                    line = [year, 'ACURA', model, section, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        def get_accessories(model):
+            try:
+                accessory_url = 'https://web.archive.org/web/20130124121414/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2013' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                accessory_url = 'https://web.archive.org/web/20130124121414/http://www.acura.com/Accessories.aspx?model=%s' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            sections = accessory_soup.select(
+                '#content-wrap > div.content-header > div.content-header-begin.has-packages-electronics > ul > li > a > span')
+            for section in sections:
+                if section.text == 'Overview':
+                    continue
+                sub_url = 'https://web.archive.org/web/20130124121414/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2013&context=%s' % (
+                    model, section.text.lower())
+                sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
+                accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
+                for accessory_list in accessory_lists:
+                    title = accessory_list.select('span > span.accessories-link > a')[0].get_text()
+                    span_a = accessory_list.select('span > span.accessories-link > a')[0]
+                    _ = span_a.extract()
+                    description = accessory_list.select('span > span.accessories-link')[0].parent.find(text=True)
+                    if not 'https://web.archive.org' in accessory_list.select('a > img')[0]['src']:
+                        img = 'https://web.archive.org' + accessory_list.select('a > img')[0]['src']
+                    else:
+                        img = accessory_list.select('a > img')[0]['src']
+                    line = [year, 'ACURA', model, section.text, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        for model in models:
+            get_features(model=model)
+            get_accessories(model)
+
+    def get_2014(self, filename):
+        models = ['TL', 'TSX', 'TSX Sport Wagon', 'ILX', 'RLX', 'RDX', 'MDX']
+        ford_class = Ford()
+
+        def get_features(model):
+            feature_url = 'https://web.archive.org/web/20140315203706/http://www.acura.com/Features.aspx?model=%s&modelYear=2014' % model
+            feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+            year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            lis = feature_soup.select('#content-wrap > div.content-body > ul > li')
+            for li in lis:
+                section = li.find('h4').get_text()
+                feature_group_url = 'https://web.archive.org/web/20140315203706/http://www.acura.com/Features.aspx?model=%s&modelYear=2014&context=%s' % (
+                    model, section)
+                soup = BeautifulSoup(requests.get(url=feature_group_url).text, 'html.parser')
+                titles_dom = soup.select(
+                    '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group')
+                for title_dom in titles_dom:
+                    title = title_dom.select('td.feature-name > a > span')[0].text.strip().replace('.', '').replace('-',
+                                                                                                                    '').replace(
+                        ',', '').replace('/', ' ').replace('(', '').replace(')', '').replace('TM', '')
+                    search_id = '_'.join(str(x.lower()) for x in title.split(' ')).replace('&', '') + 'X'
+                    search_key = {'id': search_id}
+                    section_dom = soup.find(**search_key)
+                    if section_dom.find('img').has_attr('src'):
+                        img = 'https://web.archive.org' + section_dom.find('img')['src']
+                    else:
+                        img = 'https://web.archive.org' + section_dom.find('img')['name']
+                    try:
+                        description = section_dom.find('p').get_text()
+                    except:
+                        description = section_dom.find('ul').get_text()
+                    line = [year, 'ACURA', model, section, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        def get_accessories(model):
+            try:
+                accessory_url = 'https://web.archive.org/web/20140315203706/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2014' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                accessory_url = 'https://web.archive.org/web/20140315203706/http://www.acura.com/Accessories.aspx?model=%s' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            sections = accessory_soup.select(
+                '#content-wrap > div.content-header > div.content-header-begin.has-packages-electronics > ul > li > a > span')
+            for section in sections:
+                if section.text == 'Overview':
+                    continue
+                sub_url = 'https://web.archive.org/web/20140315203706/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2014&context=%s' % (
+                    model, section.text.lower())
+                sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
+                accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
+                for accessory_list in accessory_lists:
+                    title = accessory_list.select('span > span.accessories-link > a')[0].get_text()
+                    span_a = accessory_list.select('span > span.accessories-link > a')[0]
+                    _ = span_a.extract()
+                    description = accessory_list.select('span > span.accessories-link')[0].parent.find(text=True)
+                    if not 'https://web.archive.org' in accessory_list.select('a > img')[0]['src']:
+                        img = 'https://web.archive.org' + accessory_list.select('a > img')[0]['src']
+                    else:
+                        img = accessory_list.select('a > img')[0]['src']
+                    line = [year, 'ACURA', model, section.text, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        for model in models:
+            get_features(model=model)
+            get_accessories(model)
+
+    def get_2015(self, filename):
+        models = ['TLX', 'ILX', 'RLX', 'RDX', 'MDX']
+        ford_class = Ford()
+
+        def get_features(model):
+            try:
+                feature_url = 'https://web.archive.org/web/20150101010547/http://www.acura.com/Features.aspx?model=%s&modelYear=2015' % model
+                feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+                year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                feature_url = 'https://web.archive.org/web/20150101010547/http://www.acura.com/Features.aspx?model=%s' % model
+                feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+                year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            lis = feature_soup.select('#content-wrap > div.content-body > ul > li')
+            for li in lis:
+                section = li.find('h4').get_text()
+                feature_group_url = 'https://web.archive.org/web/20150101010547/http://www.acura.com/Features.aspx?model=%s&modelYear=2015&context=%s' % (
+                    model, section)
+                soup = BeautifulSoup(requests.get(url=feature_group_url).text, 'html.parser')
+                titles_dom = soup.select(
+                    '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group')
+                for title_dom in titles_dom:
+                    title = title_dom.select('td.feature-name > a > span')[0].text.strip().replace('.', '').replace('-',
+                                                                                                                    '').replace(
+                        ',', '').replace('/', ' ').replace('(', '').replace(')', '').replace('TM', '')
+                    search_id = '_'.join(str(x.lower()) for x in title.split(' ')).replace('&', '') + 'X'
+                    search_key = {'id': search_id}
+                    section_dom = soup.find(**search_key)
+                    if section_dom.find('img').has_attr('src'):
+                        img = 'https://web.archive.org' + section_dom.find('img')['src']
+                    else:
+                        img = 'https://web.archive.org' + section_dom.find('img')['name']
+                    try:
+                        description = section_dom.find('p').get_text()
+                    except:
+                        description = section_dom.find('ul').get_text()
+                    line = [year, 'ACURA', model, section, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        def get_accessories(model):
+            try:
+                accessory_url = 'https://web.archive.org/web/20150101010547/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2015' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                accessory_url = 'https://web.archive.org/web/20150101010547/http://www.acura.com/Accessories.aspx?model=%s' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            sections = accessory_soup.select(
+                '#content-wrap > div.content-header > div.content-header-begin.has-packages-electronics > ul > li > a > span')
+            for section in sections:
+                if section.text == 'Overview':
+                    continue
+                sub_url = 'https://web.archive.org/web/20150101010547/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2015&context=%s' % (
+                    model, section.text.lower())
+                sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
+                accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
+                for accessory_list in accessory_lists:
+                    title = accessory_list.select('span > span.accessories-link > a')[0].get_text()
+                    span_a = accessory_list.select('span > span.accessories-link > a')[0]
+                    _ = span_a.extract()
+                    description = accessory_list.select('span > span.accessories-link')[0].parent.find(text=True)
+                    if not 'https://web.archive.org' in accessory_list.select('a > img')[0]['src']:
+                        img = 'https://web.archive.org' + accessory_list.select('a > img')[0]['src']
+                    else:
+                        img = accessory_list.select('a > img')[0]['src']
+                    line = [year, 'ACURA', model, section.text, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        for model in models:
+            get_features(model=model)
+            get_accessories(model)
+
+    def get_2016(self, filename):
+        models = ['TLX', 'ILX', 'RLX', 'RDX', 'MDX']
+        ford_class = Ford()
+
+        def get_features(model):
+            try:
+                feature_url = 'https://web.archive.org/web/20160205221354/http://www.acura.com/Features.aspx?model=%s&modelYear=2016' % model
+                feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+                year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                feature_url = 'https://web.archive.org/web/20160205221354/http://www.acura.com/Features.aspx?model=%s' % model
+                feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+                year = feature_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            lis = feature_soup.select('#content-wrap > div.content-body > ul > li')
+            for li in lis:
+                section = li.find('h4').get_text()
+                feature_group_url = 'https://web.archive.org/web/20160205221354/http://www.acura.com/Features.aspx?model=%s&modelYear=2016&context=%s' % (
+                    model, section)
+                soup = BeautifulSoup(requests.get(url=feature_group_url).text, 'html.parser')
+                titles_dom = soup.select(
+                    '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group')
+                for title_dom in titles_dom:
+                    title = title_dom.select('td.feature-name > a > span')[0].text.strip().replace('.', '').replace('-',
+                                                                                                                    '').replace(
+                        ',', '').replace('/', ' ').replace('(', '').replace(')', '').replace('TM', '').replace('®', 'sup__sup')
+                    search_id = '_'.join(str(x.lower()) for x in title.split(' ')).replace('&', '') + 'X'
+                    search_key = {'id': search_id}
+                    section_dom = soup.find(**search_key)
+                    if section_dom.find('img'):
+                        if section_dom.find('img').has_attr('src'):
+                            img = 'https://web.archive.org' + section_dom.find('img')['src']
+                        else:
+                            img = 'https://web.archive.org' + section_dom.find('img')['name']
+                    else:
+                        img = ''
+                    try:
+                        description = section_dom.find('p').get_text()
+                    except:
+                        description = section_dom.find('ul').get_text()
+                    line = [year, 'ACURA', model, section, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        def get_accessories(model):
+            try:
+                accessory_url = 'https://web.archive.org/web/20160205221354/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2016' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            except:
+                accessory_url = 'https://web.archive.org/web/20160205221354/http://www.acura.com/Accessories.aspx?model=%s' % model
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).text, 'html.parser')
+                year = accessory_soup.select('#sub-nav-begin > h2 > a > span')[0].get_text().split(' ')[0]
+            sections = accessory_soup.select(
+                '#content-wrap > div.content-header > div.content-header-begin.has-packages-electronics > ul > li > a > span')
+            for section in sections:
+                if section.text == 'Overview':
+                    continue
+                sub_url = 'https://web.archive.org/web/20160205221354/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2016&context=%s' % (
+                    model, section.text.lower())
+                sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
+                accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
+                for accessory_list in accessory_lists:
+                    title = accessory_list.select('span > span.accessories-link > a')[0].get_text()
+                    span_a = accessory_list.select('span > span.accessories-link > a')[0]
+                    _ = span_a.extract()
+                    description = accessory_list.select('span > span.accessories-link')[0].parent.find(text=True)
+                    if not 'https://web.archive.org' in accessory_list.select('a > img')[0]['src']:
+                        img = 'https://web.archive.org' + accessory_list.select('a > img')[0]['src']
+                    else:
+                        img = accessory_list.select('a > img')[0]['src']
+                    line = [year, 'ACURA', model, section.text, title, description, img]
+                    print(line)
+                    ford_class.write_csv(lines=[line], filename=filename)
+
+        for model in models:
+            get_features(model=model)
+            get_accessories(model)
+
+    def get_2010_2016(self):
+        self.get_2010(filename='Acura_2010_2016.csv')
+        self.get_2011(filename='Acura_2010_2016.csv')
+        self.get_2012(filename='Acura_2010_2016.csv')
+        self.get_2013(filename='Acura_2010_2016.csv')
+        self.get_2014(filename='Acura_2010_2016.csv')
+        self.get_2015(filename='Acura_2010_2016.csv')
+        self.get_2016(filename='Acura_2010_2016.csv')
+
+    def read_acura(self):
+        buick_class = Buick()
+        lines = buick_class.read_csv('output/Acura/Acura_2010_2016.csv')
+        for line in lines:
+
+            if line[6] == 'IMAGE':
+                continue
+            if 'https://web.archive.org/images/' != line[6][:31]:
+                new_image = line[6]
+                inherit = line[6].split('http://www.acura.com/images/')[0] + 'http://www.acura.com/'
+            else:
+                new_image = inherit + line[6].split('https://web.archive.org/')[1]
+            line[6] = new_image
+            buick_class.write_csv(lines=[line], filename='Acura_2010_2016_again.csv')
+
+    def get_2017(self):
+        models = ['TLX', 'ILX', 'RLX', 'RDX', 'MDX', 'NSX']
+        for model in models:
+            feature_url = 'https://web.archive.org/web/20170624044026/http://www.acura.com/rdx/features' % model.lower()
+            feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
+            sections = feature_soup.select('div.blade-wrapper > div > h6')
+            for section in sections:
+                section_parent = section.find_parent('section')
+    def manual_2017(self):
+        self.buick_class.write_csv(lines=[[]], filename='manual_2017.csv')
 
 
 class Audi:
@@ -142,10 +629,9 @@ class Buick:
             self.write_direct_csv(lines=self.csv_header, filename=filename)
         self.write_direct_csv(lines=lines, filename=filename)
 
-    def read_csv(self):
+    def read_csv(self, file):
         records = []
-        file = "output/2011_2013.csv"
-        with open(file, "r", encoding='utf-8') as csv_file:
+        with open(file, "r", encoding='utf8') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line_count = 0
             for row in csv_reader:
@@ -227,7 +713,7 @@ class Buick:
         return True
 
     def from_2014(self):
-        for year in range(2015, 2018):
+        for year in range(2014, 2018):
             url = 'https://web.archive.org/web/%s0228093211/http://www.buick.com/' % year
             soup = BeautifulSoup(requests.get(url).text, 'html.parser')
             area_footer = soup.select('#mds-area-footer')[0]\
@@ -273,24 +759,76 @@ class Buick:
         self.write_csv(lines=f_lines, filename='2011_2017.csv')
         self.from_2014()
 
+    def get_2018(self):
+        initial_url = 'https://web.archive.org/web/20180329164311/http://www.buick.com/navigation/primary-nav-link/vehicles.html'
+        soup = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser')
+        colums = soup.find_all('div', {'class': 'q-margin-base q-mod q-vehicle-tile'})
+        for colum in colums:
+            link = 'https://web.archive.org' + colum.find('a')['href']
+            if 'previous-year' in link:
+                continue
+            print(link)
+
+    def lines_manual_file(self):
+        lines_11_17 = self.read_csv(file='output/2011_2017.csv')
+        self.write_csv(filename='2011_2018.csv', lines=lines_11_17)
+        lines_18 = self.read_csv(file='output/2018_manual.csv')
+        for line_18 in lines_18:
+            new_line = [line_18[0], line_18[1], line_18[2], line_18[3], line_18[4], line_18[5], 'https://web.archive'
+                                                                                                '.org' + line_18[6]]
+            self.write_csv(filename='2011_2018.csv', lines=[new_line])
 
     def read_write(self):
         lines = self.read_csv()
         self.write_csv(lines=lines, filename='2011_2013.csv')
 
+    def from_2019(self):
+        links_19 = ['https://buick.com/suvs/previous-year/encore', 'https://buick.com/suvs/previous-year/envision', 'https://buick.com/suvs/previous-year/enclave', 'https://buick.com/crossovers/previous-year/regal/tourx', 'https://buick.com/sedans/previous-year/regal/sportback', 'https://buick.com/sedans/previous-year/regal/gs', 'https://buick.com/sedans/previous-year/lacrosse-full-size-luxury-sedan', 'https://buick.com/suvs/previous-year/enclave/avenir', 'https://buick.com/sedans/previous-year/regal/avenir', 'https://buick.com/sedans/previous-year/lacrosse-avenir-full-size-luxury-sedan']
+        links_20 = ['https://buick.com/suvs/encore', 'https://buick.com/suvs/envision', 'https://buick.com/suvs/enclave', 'https://buick.com/crossovers/regal/tourx', 'https://buick.com/sedans/regal/sportback', 'https://buick.com/sedans/regal/gs', 'https://buick.com/sedans/lacrosse-full-size-luxury-sedan', 'https://buick.com/suvs/enclave/avenir', 'https://buick.com/sedans/regal/avenir', 'https://buick.com/sedans/lacrosse-avenir-full-size-luxury-sedan']
 
+        for link in links_19:
+            print(link)
+        for link_19 in links_19:
+            soup = BeautifulSoup(requests.get(url=link_19).text, 'html.parser')
+            display = soup.find('h1', {'class': 'q-display1'}).get_text().strip()
+            if 'PAGE NOT FOUND' in display:
+                continue
+            model = display[4:].strip()
+            if model == 'L AVENIR':
+                model = display.strip()
+            features = soup.find('span', string="Features")
+            if features:
+                parent = 'https://buick.com' + features.parent['href']
+                sections = BeautifulSoup(requests.get(url=parent).text, 'html.parser').select('ul.no-bullet.inline-list.q-js-tirtiary-list-items.q-list-layout>li>a')
+                for section in sections:
+                    section_name = section.find('span').getText().strip()
+                    section_link = 'https://buick.com' + section['href']
+                    # feature_soup = BeautifulSoup(requests.get(url=section_link).text, 'html.parser')
+                    # grid = feature_soup.select('div.row.q-gridbuilder .grid-column-alignment-left.columns .medium-margin')
+                    print(link_19, section_name, section_link)
 
-
-
-
-
-
+    def add_19_20(self):
+        lines_19 = self.read_csv(file='output/2019_manual.csv')
+        lines_20 = self.read_csv(file='output/2020_manual.csv')
+        lines = []
+        for line in lines_19:
+            line[6] = 'https://www.buick.com' + line[6]
+            lines.append(line)
+        for line in lines_20:
+            line[6] = 'https://www.buick.com' + line[6]
+            lines.append(line)
+        lines_before = self.read_csv(file='output/2011_2018.csv')
+        for line in lines_before:
+            lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.write_csv(lines=lines, filename='Buick_Features.csv')
 
 
 print("=======================Start=============================")
-ford = Ford()
-acura = Acura()
-audi = Audi()
-buick = Buick()
-buick.add_2011_2017()
+if __name__ == '__main__':
+    ford = Ford()
+    acura = Acura()
+    acura.manual_2017()
+    audi = Audi()
+    buick = Buick()
 print("=======================The End===========================")
