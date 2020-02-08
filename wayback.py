@@ -588,13 +588,34 @@ class Acura:
     def get_2017(self):
         models = ['TLX', 'ILX', 'RLX', 'RDX', 'MDX', 'NSX']
         for model in models:
-            feature_url = 'https://web.archive.org/web/20170624044026/http://www.acura.com/rdx/features' % model.lower()
+            feature_url = 'https://web.archive.org/web/20170624044026/http://www.acura.com/%s/features' % model.lower()
             feature_soup = BeautifulSoup(requests.get(url=feature_url).text, 'html.parser')
             sections = feature_soup.select('div.blade-wrapper > div > h6')
+            print(feature_url)
+            print(len(sections))
             for section in sections:
                 section_parent = section.find_parent('section')
-    def manual_2017(self):
-        self.buick_class.write_csv(lines=[[]], filename='manual_2017.csv')
+
+    def get_2018_rlx(self):
+        url = 'https://web.archive.org/web/20171129075051/https://www.acura.com/RLX/features'
+        soup = BeautifulSoup(requests.get(url=url).text, 'html.parser')
+        sections = soup.select('div.rzf-gry-title.text-x-small-left.text-small-left.text-medium-left.text-large-left.text-x-large-left')
+        for section in sections:
+            print(section.get_text().strip())
+
+    def add_2017_2020(self):
+        old_lines = self.buick_class.read_csv(file='output/Acura/Acura_2010_2016_again.csv', encode='true')
+        self.buick_class.write_csv(filename='Acura_Features.csv', lines=old_lines)
+        files = ['manual_2017.csv', 'manual_2018.csv', 'manual_2019.csv', 'manual_2020.csv']
+        for file in files:
+            file_path = 'output/%s' % file
+            lines = self.buick_class.read_csv(file=file_path, encode='false')
+            for line in lines:
+                if file == 'manual_2020.csv':
+                    line[6] = 'https://acura.com' + line[6]
+                else:
+                    line[6] = 'https://web.archive.org' + line[6]
+                self.buick_class.write_csv(filename='Acura_Features.csv', lines=[line])
 
 
 class Audi:
@@ -629,24 +650,42 @@ class Buick:
             self.write_direct_csv(lines=self.csv_header, filename=filename)
         self.write_direct_csv(lines=lines, filename=filename)
 
-    def read_csv(self, file):
+    def read_csv(self, file, encode):
         records = []
-        with open(file, "r", encoding='utf8') as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            line_count = 0
-            for row in csv_reader:
-                print(row)
-                if line_count < 1:
-                    line_count += 1
-                    continue
-                count = 0
-                for x in row:
-                    if len(x) > 1:
-                        count += 1
-                if count == 7:
-                    records.append(row)
-        records.sort(key=lambda x: (x[0], x[2]))
-        return records
+        if encode=='true':
+            with open(file, "r", encoding='utf8') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                line_count = 0
+                for row in csv_reader:
+                    print(row)
+                    if line_count < 1:
+                        line_count += 1
+                        continue
+                    count = 0
+                    for x in row:
+                        if len(x) > 1:
+                            count += 1
+                    if count == 7:
+                        records.append(row)
+            records.sort(key=lambda x: (x[0], x[2]))
+            return records
+        else:
+            with open(file, "r") as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                line_count = 0
+                for row in csv_reader:
+                    print(row)
+                    if line_count < 1:
+                        line_count += 1
+                        continue
+                    count = 0
+                    for x in row:
+                        if len(x) > 1:
+                            count += 1
+                    if count == 7:
+                        records.append(row)
+            records.sort(key=lambda x: (x[0], x[2]))
+            return records
 
     def vehicle_tab(self, year):
         url = 'https://web.archive.org/web/%s1109064802/http://www.buick.com/' % year
@@ -828,7 +867,7 @@ print("=======================Start=============================")
 if __name__ == '__main__':
     ford = Ford()
     acura = Acura()
-    acura.manual_2017()
+    acura.add_2017_2020()
     audi = Audi()
     buick = Buick()
 print("=======================The End===========================")
