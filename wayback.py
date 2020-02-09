@@ -863,11 +863,35 @@ class Buick:
         self.write_csv(lines=lines, filename='Buick_Features.csv')
 
 
+class Toyota:
+    def get_2010(self):
+        url = 'http://web.archive.org/web/20100103043730/http://www.toyota.com/'
+        models = BeautifulSoup(requests.get(url=url).text, 'html.parser').select('#globalnav-container .model-name')
+        for model in models:
+            model_name = model.get_text().strip()
+            thumbnail_url = 'http://web.archive.org/web/20100326080238/http://www.toyota.com/%s/accessories.html' % model_name.replace('HYBRID', '').replace(' ', '').lower()
+            thumbnail_soup = BeautifulSoup(requests.get(url=thumbnail_url).text, 'html.parser')
+            print(thumbnail_url)
+            photo_galleries = thumbnail_soup.select('#content-main > div.photoGallery')
+            for photo_gallery in photo_galleries:
+                section = photo_gallery.find('div', {'class': 'gallery-heading-text'}).get_text()
+                thumb_collection = photo_gallery.select('.thumbcollection .thumbnail')
+                for thumb in thumb_collection:
+                    title = thumb.find(text=True)
+                    image = 'https://web.archive.org' + thumb.select('a > img')[0]['src']
+                    description_url = thumb.find_all('a', recursive=False)[0]
+                    description_soup = BeautifulSoup(requests.get(url=description_url).text, 'html.parser')
+                    description = description_soup.select('#overlayDiv > div.model-layer-box-content > div.descrip-text').getText()
+                    line = ['2010', 'Toyota', model_name, section, title, description, image]
+                    print(line)
+
+
 print("=======================Start=============================")
 if __name__ == '__main__':
     ford = Ford()
     acura = Acura()
-    acura.add_2017_2020()
     audi = Audi()
     buick = Buick()
+    toyota = Toyota()
+    toyota.get_2010()
 print("=======================The End===========================")
