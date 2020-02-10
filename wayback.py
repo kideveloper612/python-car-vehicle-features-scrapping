@@ -126,7 +126,8 @@ class Acura:
                 result = re.search('&context=(.*)#', ul['href'])
                 section = result.group(1).replace('+_+', ' ').strip()
                 context_soup = BeautifulSoup(requests.get(url=context_url).text, 'html.parser')
-                feature_group_tags = context_soup.select('#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group > td > a')
+                feature_group_tags = context_soup.select(
+                    '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group > td > a')
                 for feature_group_tag in feature_group_tags:
                     a_tag_id = feature_group_tag['href'].strip()
                     if len(a_tag_id) > 1:
@@ -148,6 +149,7 @@ class Acura:
     def get_2011(self, filename):
         models = ['RL', 'TL', 'TSX', 'TSX Sport Wagon', 'ZDX', 'MDX', 'RDX']
         ford_class = Ford()
+
         def get_features(model):
             try:
                 feature_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Features.aspx?model=%s&modelYear=2011' % model
@@ -161,7 +163,7 @@ class Acura:
             for li in lis:
                 section = li.find('h4').get_text()
                 feature_group_url = 'https://web.archive.org/web/20110227065539/http://www.acura.com/Features.aspx?model=%s&modelYear=2011&context=%s' % (
-                model, section)
+                    model, section)
                 soup = BeautifulSoup(requests.get(url=feature_group_url).text, 'html.parser')
                 titles_dom = soup.select(
                     '#content-wrap > div.content-body > div.features-list > div > table > tbody > tr.feature-group')
@@ -195,7 +197,8 @@ class Acura:
             for section in sections:
                 if section.text == 'Overview':
                     continue
-                sub_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2011&context=%s' % (model, section.text.lower())
+                sub_url = 'https://web.archive.org/web/20110227042758/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2011&context=%s' % (
+                model, section.text.lower())
                 sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
                 accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
                 for accessory_list in accessory_lists:
@@ -254,7 +257,7 @@ class Acura:
                 if section.text == 'Overview':
                     continue
                 sub_url = 'https://web.archive.org/web/20120227042758/http://www.acura.com/Accessories.aspx?model=%s&modelYear=2012&context=%s' % (
-                model, section.text.lower())
+                    model, section.text.lower())
                 sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
                 accessory_lists = sub_soup.select('#accessories-%s > ul > li' % section.text.lower())
                 for accessory_list in accessory_lists:
@@ -507,7 +510,8 @@ class Acura:
                 for title_dom in titles_dom:
                     title = title_dom.select('td.feature-name > a > span')[0].text.strip().replace('.', '').replace('-',
                                                                                                                     '').replace(
-                        ',', '').replace('/', ' ').replace('(', '').replace(')', '').replace('TM', '').replace('®', 'sup__sup')
+                        ',', '').replace('/', ' ').replace('(', '').replace(')', '').replace('TM', '').replace('®',
+                                                                                                               'sup__sup')
                     search_id = '_'.join(str(x.lower()) for x in title.split(' ')).replace('&', '') + 'X'
                     search_key = {'id': search_id}
                     section_dom = soup.find(**search_key)
@@ -599,7 +603,8 @@ class Acura:
     def get_2018_rlx(self):
         url = 'https://web.archive.org/web/20171129075051/https://www.acura.com/RLX/features'
         soup = BeautifulSoup(requests.get(url=url).text, 'html.parser')
-        sections = soup.select('div.rzf-gry-title.text-x-small-left.text-small-left.text-medium-left.text-large-left.text-x-large-left')
+        sections = soup.select(
+            'div.rzf-gry-title.text-x-small-left.text-small-left.text-medium-left.text-large-left.text-x-large-left')
         for section in sections:
             print(section.get_text().strip())
 
@@ -652,7 +657,7 @@ class Buick:
 
     def read_csv(self, file, encode):
         records = []
-        if encode=='true':
+        if encode == 'true':
             with open(file, "r", encoding='utf8') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 line_count = 0
@@ -755,9 +760,9 @@ class Buick:
         for year in range(2014, 2018):
             url = 'https://web.archive.org/web/%s0228093211/http://www.buick.com/' % year
             soup = BeautifulSoup(requests.get(url).text, 'html.parser')
-            area_footer = soup.select('#mds-area-footer')[0]\
-                .find('div', {'class': 'mds-area-pf6 nav_footer_1 mod modNav_footer_1'})\
-                .find('div', {'class': 'mds-cmp-navigation06 nav_sitemap_2 mod modNav_sitemap_2'})\
+            area_footer = soup.select('#mds-area-footer')[0] \
+                .find('div', {'class': 'mds-area-pf6 nav_footer_1 mod modNav_footer_1'}) \
+                .find('div', {'class': 'mds-cmp-navigation06 nav_sitemap_2 mod modNav_sitemap_2'}) \
                 .find('ul').select('li>a')
             for area in area_footer:
                 area_array = area.text.split(' ')
@@ -767,7 +772,8 @@ class Buick:
                     model = area.text
                 sub_url = 'https://web.archive.org%s' % area['href']
                 if year == 2014:
-                    sub_soup = BeautifulSoup(requests.get(url=sub_url).text.replace('<figure>', '').replace('</figure>', ''), 'html.parser')
+                    sub_soup = BeautifulSoup(
+                        requests.get(url=sub_url).text.replace('<figure>', '').replace('</figure>', ''), 'html.parser')
                 else:
                     sub_soup = BeautifulSoup(requests.get(url=sub_url).text, 'html.parser')
                 wells = sub_soup.find_all('div', {'class': 'cnt_well_c2 section'})
@@ -791,8 +797,10 @@ class Buick:
                         image = 'https://web.archive.org%s' % initial_image
                         if len(image) < len('https://web.archive.org') + 2:
                             continue
-                        self.write_csv(lines=[[str(year), 'Buick', model, section, title, description, image]], filename='2011_2017.csv')
+                        self.write_csv(lines=[[str(year), 'Buick', model, section, title, description, image]],
+                                       filename='2011_2017.csv')
                         print(year, model, section, title, description, image)
+
     def add_2011_2017(self):
         f_lines = self.read_csv()
         self.write_csv(lines=f_lines, filename='2011_2017.csv')
@@ -822,8 +830,21 @@ class Buick:
         self.write_csv(lines=lines, filename='2011_2013.csv')
 
     def from_2019(self):
-        links_19 = ['https://buick.com/suvs/previous-year/encore', 'https://buick.com/suvs/previous-year/envision', 'https://buick.com/suvs/previous-year/enclave', 'https://buick.com/crossovers/previous-year/regal/tourx', 'https://buick.com/sedans/previous-year/regal/sportback', 'https://buick.com/sedans/previous-year/regal/gs', 'https://buick.com/sedans/previous-year/lacrosse-full-size-luxury-sedan', 'https://buick.com/suvs/previous-year/enclave/avenir', 'https://buick.com/sedans/previous-year/regal/avenir', 'https://buick.com/sedans/previous-year/lacrosse-avenir-full-size-luxury-sedan']
-        links_20 = ['https://buick.com/suvs/encore', 'https://buick.com/suvs/envision', 'https://buick.com/suvs/enclave', 'https://buick.com/crossovers/regal/tourx', 'https://buick.com/sedans/regal/sportback', 'https://buick.com/sedans/regal/gs', 'https://buick.com/sedans/lacrosse-full-size-luxury-sedan', 'https://buick.com/suvs/enclave/avenir', 'https://buick.com/sedans/regal/avenir', 'https://buick.com/sedans/lacrosse-avenir-full-size-luxury-sedan']
+        links_19 = ['https://buick.com/suvs/previous-year/encore', 'https://buick.com/suvs/previous-year/envision',
+                    'https://buick.com/suvs/previous-year/enclave',
+                    'https://buick.com/crossovers/previous-year/regal/tourx',
+                    'https://buick.com/sedans/previous-year/regal/sportback',
+                    'https://buick.com/sedans/previous-year/regal/gs',
+                    'https://buick.com/sedans/previous-year/lacrosse-full-size-luxury-sedan',
+                    'https://buick.com/suvs/previous-year/enclave/avenir',
+                    'https://buick.com/sedans/previous-year/regal/avenir',
+                    'https://buick.com/sedans/previous-year/lacrosse-avenir-full-size-luxury-sedan']
+        links_20 = ['https://buick.com/suvs/encore', 'https://buick.com/suvs/envision',
+                    'https://buick.com/suvs/enclave', 'https://buick.com/crossovers/regal/tourx',
+                    'https://buick.com/sedans/regal/sportback', 'https://buick.com/sedans/regal/gs',
+                    'https://buick.com/sedans/lacrosse-full-size-luxury-sedan', 'https://buick.com/suvs/enclave/avenir',
+                    'https://buick.com/sedans/regal/avenir',
+                    'https://buick.com/sedans/lacrosse-avenir-full-size-luxury-sedan']
 
         for link in links_19:
             print(link)
@@ -838,7 +859,8 @@ class Buick:
             features = soup.find('span', string="Features")
             if features:
                 parent = 'https://buick.com' + features.parent['href']
-                sections = BeautifulSoup(requests.get(url=parent).text, 'html.parser').select('ul.no-bullet.inline-list.q-js-tirtiary-list-items.q-list-layout>li>a')
+                sections = BeautifulSoup(requests.get(url=parent).text, 'html.parser').select(
+                    'ul.no-bullet.inline-list.q-js-tirtiary-list-items.q-list-layout>li>a')
                 for section in sections:
                     section_name = section.find('span').getText().strip()
                     section_link = 'https://buick.com' + section['href']
@@ -864,27 +886,170 @@ class Buick:
 
 
 class Toyota:
-    def get_2010(self):
-        url = 'http://web.archive.org/web/20100103043730/http://www.toyota.com/'
-        models = BeautifulSoup(requests.get(url=url).text, 'html.parser').select('#globalnav-container .model-name')
-        for model in models:
-            model_name = model.get_text().strip()
-            thumbnail_url = 'http://web.archive.org/web/20100326080238/http://www.toyota.com/%s/accessories.html' % model_name.replace('HYBRID', '').replace(' ', '').lower()
-            thumbnail_soup = BeautifulSoup(requests.get(url=thumbnail_url).text, 'html.parser')
-            print(thumbnail_url)
-            photo_galleries = thumbnail_soup.select('#content-main > div.photoGallery')
-            for photo_gallery in photo_galleries:
-                section = photo_gallery.find('div', {'class': 'gallery-heading-text'}).get_text()
-                thumb_collection = photo_gallery.select('.thumbcollection .thumbnail')
-                for thumb in thumb_collection:
-                    title = thumb.find(text=True)
-                    image = 'https://web.archive.org' + thumb.select('a > img')[0]['src']
-                    description_url = thumb.find_all('a', recursive=False)[0]
-                    description_soup = BeautifulSoup(requests.get(url=description_url).text, 'html.parser')
-                    description = description_soup.select('#overlayDiv > div.model-layer-box-content > div.descrip-text').getText()
-                    line = ['2010', 'Toyota', model_name, section, title, description, image]
-                    print(line)
+    def __init__(self):
+        self.buick_class = Buick()
 
+    def get_2010_2012(self):
+        for year_loop in range(2010, 2011):
+            url = 'http://web.archive.org/web/%s0411061440/http://www.toyota.com/' % year_loop
+            models = BeautifulSoup(requests.get(url=url).text, 'html.parser').select('#globalnav-container .model-name')
+            tmp_thumbnail_url_list = []
+            total_lines = []
+            for model in models:
+                model_name = model.get_text().strip()
+                thumbnail_url = 'http://web.archive.org/web/%s0411061440/http://www.toyota.com/%s/accessories.html' % (
+                year_loop, model_name.replace(
+                    ' ', '').lower().replace('hybrid', ''))
+                if thumbnail_url in tmp_thumbnail_url_list:
+                    continue
+                tmp_thumbnail_url_list.append(thumbnail_url)
+                print(thumbnail_url)
+                year_soup = BeautifulSoup(requests.get(url=thumbnail_url.replace('/accessories.html', '')).text,
+                                          'html.parser').title.get_text().split(' ')
+                for word in year_soup:
+                    try:
+                        year = int(word)
+                    except:
+                        continue
+                thumbnail_soup = BeautifulSoup(requests.get(url=thumbnail_url).text, 'html.parser')
+                photo_galleries = thumbnail_soup.select('.photoGallery')
+                for photo_gallery in photo_galleries:
+                    section = photo_gallery.find('div', {'class': 'gallery-heading-text'}).get_text()
+                    thumb_collection = photo_gallery.select('.thumbcollection .thumbnail')
+
+                    for thumb in thumb_collection:
+                        title = thumb.get_text().strip()
+                        image = 'https://web.archive.org' + thumb.select('a > img')[0]['src']
+                        description_url = 'https://web.archive.org' + thumb.find_all('a', recursive=False)[0]['href']
+                        description_soup = BeautifulSoup(requests.get(url=description_url).text, 'html.parser')
+                        try:
+                            description = \
+                            description_soup.select('#overlayDiv > div.model-layer-box-content > div.descrip-text')[
+                                0].getText()
+                        except:
+                            continue
+                        line = [year, 'Toyota', model_name, section, title, description, image]
+                        if not line in total_lines:
+                            print(line)
+                            self.buick_class.write_csv(lines=[line], filename='toyota_2010_2012.csv')
+                            total_lines.append(line)
+
+    def get_2013_2015(self):
+        model_json_url = 'http://web.archive.org/web/20140511154040/http://www.toyota.com/ToyotaSite/rest/lscs/getDocument?templatePath=templatedata/TComVehiclesData/Series/data/CombinedSeries.xml'
+        model_json = requests.get(url=model_json_url).json()['Root']['Series']
+        lines = []
+        for mode in model_json:
+            if mode['modelYear'] == 2013 or 2014:
+                model_name = mode['modelName']
+                if '-' in model_name:
+                    section_url = 'http://web.archive.org/web/%s1002093710/http://www.toyota.com/%s' % (
+                    mode['modelYear'], model_name.replace(
+                        ' ', '-').lower())
+                else:
+                    section_url = 'http://web.archive.org/web/%s1002093710/http://www.toyota.com/%s' % (
+                    mode['modelYear'], model_name.replace(
+                        ' ', '').lower().replace('hybrid', ''))
+                section_soup = BeautifulSoup(requests.get(url=section_url).text, 'html.parser')
+                mlp_features = section_soup.select('.content-section.panel-container')
+                for mlp_feature in mlp_features:
+                    if len(mlp_feature.select('.page-header > h2')) > 0:
+                        section = mlp_feature.select('.page-header > h2')[0].get_text()
+                    elif len(mlp_feature.select('.page-header > h3')) > 0:
+                        section = mlp_feature.select('.page-header > h3')[0].get_text()
+                    contents = mlp_feature.select('.page-content .tab-content .tab-pane')
+                    for content in contents:
+                        try:
+                            image = 'https://web.archive.org' + content.find('img')['src']
+                        except:
+                            continue
+                        if content.find('h3'):
+                            title_dom = content.find('h3')
+                            description = title_dom.find_next('p').getText().strip()
+                        elif content.find('h4'):
+                            title_dom = content.find('h4')
+                            description = title_dom.find_next('p').getText().strip()
+                        elif content.find('h5'):
+                            title_dom = content.find('h5')
+                            description = title_dom.find_next('p').getText().strip()
+                        else:
+                            continue
+                        title = title_dom.getText().strip()
+                        line = [mode['modelYear'], 'Toyota', model_name, section, title, description, image]
+                        lines.append(line)
+                        print(line)
+                print(section_url)
+        lines.sort(key=lambda x: (x[0], x[2]))
+        print(lines)
+        self.buick_class.write_csv(lines=lines, filename='toyota_2013_2014.csv')
+
+    def get_2015(self):
+        model_json_url = 'http://web.archive.org/web/20160511154040/http://www.toyota.com/ToyotaSite/rest/lscs/getDocument?templatePath=templatedata/TComVehiclesData/Series/data/CombinedSeries.xml'
+        model_json = requests.get(url=model_json_url).json()['Root']['Series']
+        model_list = []
+        for model in model_json:
+            if not model['modelName'] in model_list:
+                model_list.append(model['modelName'])
+        lines = []
+        for mode in model_json:
+            if mode['modelYear'] == 2016:
+                model_name = mode['modelName']
+                if '-' in model_name:
+                    section_url = 'http://web.archive.org/web/%s1002093710/http://www.toyota.com/%s' % (
+                        mode['modelYear'], model_name.replace(
+                            ' ', '-').lower())
+                else:
+                    section_url = 'http://web.archive.org/web/%s1002093710/http://www.toyota.com/%s' % (
+                        mode['modelYear'], model_name.replace(
+                            ' ', '').lower().replace('hybrid', ''))
+                section_soup = BeautifulSoup(requests.get(url=section_url).text, 'html.parser')
+                mlp_features = section_soup.select('.mlp-features-section')
+                for mlp_feature in mlp_features:
+                    if len(mlp_feature.select('.mlp-features-header > h2')) > 0:
+                        section = mlp_feature.select('.mlp-features-header .mlp-features-title')[0].get_text()
+                    contents = mlp_feature.select('.mlp-features-content .mlp-feature .mlp-feature-body')
+                    for content in contents:
+                        if not content.select('.mlp-feature-image img'):
+                            continue
+                        img_soup = content.select('.mlp-feature-image img')[0]
+                        if img_soup.has_attr('srcset'):
+                            image = content.select('.mlp-feature-image img')[0]['srcset']
+                        elif img_soup.has_attr('data-srcset'):
+                            image = content.select('.mlp-feature-image img')[0]['data-srcset']
+                        elif img_soup.has_attr('src'):
+                            image = content.select('.mlp-feature-image img')[0]['src']
+                        if not content.select('.mlp-feature-content > h3'):
+                            continue
+                        img = image.split('.jpg')[0] + '.jpg'
+                        title = content.select('.mlp-feature-content > h3')[0].get_text().strip()
+                        description = content.select('.mlp-feature-content > p')[0].get_text().strip()
+                        line = [mode['modelYear'], 'Toyota', model_name, section, title, description, img]
+                        lines.append(line)
+                        print(line)
+                        if model_name in model_list:
+                            model_list.remove(model_name)
+                print(section_url)
+        # lines.sort(key=lambda x: (x[0], x[2]))
+        print(lines)
+        print(model_list)
+        self.buick_class.write_csv(lines=lines, filename='toyota_2016.csv')
+
+    def get_2017(self):
+        initial_url = 'http://web.archive.org/web/20170101233213/http://www.toyota.com/'
+        for num in range(1, 5):
+            soup = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser')
+            selector = '#wrapper > section.in-page-nav > div.explore-all-vehicles > div > div:nth-child(%s) > div.tcom-accordion-content > div > div > div > div > div.tcom-model-sweep-vehicle' % num
+            vehicles = soup.select(selector)
+            for vehicle in vehicles:
+                link = 'https://web.aichive.org' + vehicle.find_all("a", recursive=False)[0]['href']
+                model_name = vehicle.select('.tcom-model-sweep-info a')[0].getText().strip()
+                model = model_name[4:].strip()
+                link_soup = BeautifulSoup(requests.get(url=link).text, 'html.parser')
+                sliders = link_soup.select('#wrapper > section.refresh-features-slider-container > section.tcom-carousel.refresh-features-slider')
+                print(link)
+                print(len(sliders))
+
+
+# wrapper > section.in-page-nav > div.explore-all-vehicles > div > div:nth-child(1) > div.tcom-accordion-content > div > div > div > div > div.tcom-model-sweep-vehicle
 
 print("=======================Start=============================")
 if __name__ == '__main__':
@@ -893,5 +1058,5 @@ if __name__ == '__main__':
     audi = Audi()
     buick = Buick()
     toyota = Toyota()
-    toyota.get_2010()
+    toyota.get_2017()
 print("=======================The End===========================")
