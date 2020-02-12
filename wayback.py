@@ -1289,7 +1289,6 @@ class Chevrolet:
 
 class Chevrolet_count:
     def __init__(self):
-        self.buick_class = Buick()
         self.csv_header = [['MAKE', 'MODEL', 'ID', 'YEAR', 'GALLERY', 'PDF', 'HOW_TO_VIDEOS', 'FEATURES']]
 
     def write_direct_csv(self, lines, filename):
@@ -1305,10 +1304,39 @@ class Chevrolet_count:
             self.write_direct_csv(lines=self.csv_header, filename=filename)
         self.write_direct_csv(lines=lines, filename=filename)
 
-    def count(self):
-        lines = self.buick_class.read_csv('C:\\Users\\USER\\Downloads\\chev_models_years.csv', encode='true')
+    def read_csv(self, file):
+        records = []
+        with open(file, "r", encoding='utf8') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            for row in csv_reader:
+                records.append(row)
+        records.pop(0)
+        return records
+
+    def count(self, file_path):
+        lines = self.read_csv(file_path)
+        year_array = []
+        for line in lines:
+            g_years = list(set(line[3].split(',')))
+            p_years = list(set(line[5].split(',')))
+            h_years = list(set(line[6].split(',')))
+            f_years = list(set(line[7].split(',')))
+            for g_year in g_years:
+                if g_year not in year_array:
+                    year_array.append(g_year)
+            for p_year in p_years:
+                if p_year not in year_array:
+                    year_array.append(p_year)
+            for h_year in h_years:
+                if h_year not in year_array:
+                    year_array.append(h_year)
+            for f_year in f_years:
+                if f_year not in year_array:
+                    year_array.append(f_year)
+        print(year_array)
+
         write_lines = []
-        for year in range(1950, 2021):
+        for year in range(1981, 2021):
             for line in lines:
                 gallery = 0
                 pdf = 0
