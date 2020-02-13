@@ -1,5 +1,6 @@
 import requests
 import csv
+
 from bs4 import BeautifulSoup
 import os
 import re
@@ -1193,6 +1194,29 @@ class Toyota:
 class Chevrolet:
     def __init__(self):
         self.buick_class = Buick()
+        self.make = 'Chevrolet'
+        self.csv_header_gallery = [['YEAR', 'MAKE', 'MODEL', 'SECTION', 'GALLERY']]
+        self.csv_header = [['YEAR', 'MAKE', 'MODEL', 'SECTION', 'TITLE', 'DESCRIPTION', 'IMAGE']]
+
+    def write_direct_csv(self, lines, filename):
+        with open('output/%s' % filename, 'a', encoding="utf-8", newline='') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',')
+            writer.writerows(lines)
+        csv_file.close()
+
+    def write_csv(self, lines, filename):
+        if not os.path.isdir('output'):
+            os.mkdir('output')
+        if not os.path.isfile('output/%s' % filename):
+            self.write_direct_csv(lines=self.csv_header_gallery, filename=filename)
+        self.write_direct_csv(lines=lines, filename=filename)
+
+    def write_csv_gallery(self, lines, filename):
+        if not os.path.isdir('output'):
+            os.mkdir('output')
+        if not os.path.isfile('output/%s' % filename):
+            self.write_direct_csv(lines=self.csv_header_gallery, filename=filename)
+        self.write_direct_csv(lines=lines, filename=filename)
 
     def get_2010(self):
         initial_url = 'http://web.archive.org/web/20100414153506/http://www.chevrolet.com/'
@@ -1242,16 +1266,64 @@ class Chevrolet:
             '#gnav_vehicles > ul.toplist > div > ul > li > a')
         for brand in brands:
             url = requests.get('https://web.archive.org' + brand['href']).url
-            print(url)
             models_dom = BeautifulSoup(requests.get(url=url).text, 'html.parser')
             year_model = models_dom.select('#headBrand > li.upperHead')
             if year_model:
+                gallery_url = models_dom.select('#subMenu > li:nth-child(3) > a')
                 year = year_model[0].getText().strip()[:4]
                 model = year_model[0].getText().strip()[4:].strip()
+                modules_container = models_dom.select('#modulesMain > div.moduleContainer')
+                for module_container in modules_container:
+                    if module_container.find('h2', {'class': 'mainModuleHeading'}):
+                        section_dom = module_container.find('h2', {'class': 'mainModuleHeading'})
+                        if section_dom:
+                            section = section_dom.get_text().strip()
+                        else:
+                            continue
+                        one_thirds = module_container.find_all('div', recursive=False)
+                        title_dom = module_container.find_all('div', class_='moduleSubheading')
+                        titles = []
+                        for title_d in title_dom:
+                            titles.append(title_d.get_text().strip())
+                        description_dom = []
+                        for one_third in one_thirds:
+                            if one_third.find('p'):
+                                for div in one_third.find_all("div", {'class': 'moduleSubheading'}):
+                                    div.decompose()
+                                description_dom.append(one_third)
+                        image_dom = module_container.select('.imageWrapper img')
+                        if image_dom and title_dom and description_dom:
+                            min_num = min(len(titles), len(description_dom), len(image_dom))
+                        if min_num <= len(titles) and min_num <= len(description_dom) and min_num <= len(image_dom):
+                            for i in range(min_num):
+                                title = titles[i]
+                                description = description_dom[i].getText().strip()
+                                image_url = 'https://web.archive.org' + image_dom[i]['src']
+                                line = [year, self.make, model, section, title, description, image_url]
+                                print(line)
+                                self.write_csv_gallery(lines=[line], filename='chevrolet_2011.csv')
+                    else:
+                        section = module_container.find_previous('h2', {'class': 'mainModuleHeading'}).getText().strip()
+                        one_thirds = module_container.find_all('div', recursive=False)
+                        for one_third in one_thirds:
+                            image_url = ''
+                            if one_third.find('div', class_='moduleSubheading'):
+                                title = one_third.find('div', class_='moduleSubheading').get_text().strip()
+                            if one_third.find('p'):
+                                description = one_third.find('p').getText().strip()
+                            if one_third.select('.imageWrapper img'):
+                                image_url = 'https://web.archive.org' + one_third.select('.imageWrapper img')[0]['src']
+                            if title and description and image_url:
+                                line = [year, self.make, model, section, title, description, image_url]
+                                print(line)
+                                self.write_csv_gallery(lines=[line], filename='chevrolet_2011.csv')
+                                title = ''
+                                description = ''
             else:
                 tool_links = models_dom.select('#toolsLinks > a.learnmore')
                 for tool_link in tool_links:
                     tool_link_url = 'https://web.archive.org' + tool_link['href']
+                    print(tool_link_url)
                     models_dom = BeautifulSoup(requests.get(url=tool_link_url).text, 'html.parser')
                     year_model = models_dom.select('#headBrand > li.upperHead')
                     if year_model:
@@ -1266,27 +1338,384 @@ class Chevrolet:
                             else:
                                 continue
                             one_thirds = module_container.find_all('div', recursive=False)
-
                             title_dom = module_container.find_all('div', class_='moduleSubheading')
-
-                            description_dom = module_container.select('div > p')
+                            titles = []
+                            for title_d in title_dom:
+                                titles.append(title_d.get_text().strip())
+                            description_dom = []
+                            for one_third in one_thirds:
+                                if one_third.find('p'):
+                                    for div in one_third.find_all("div", {'class': 'moduleSubheading'}):
+                                        div.decompose()
+                                    description_dom.append(one_third)
                             image_dom = module_container.select('.imageWrapper img')
-                            for i in range(len(image_dom)):
-                                if title_dom and title_dom[i]:
-                                    title = title_dom[i].get_text().strip()
+                            if image_dom and title_dom and description_dom:
+                                min_num = min(len(titles), len(description_dom), len(image_dom))
+                            if min_num <= len(titles) and min_num <= len(description_dom) and min_num <= len(image_dom):
+                                for i in range(min_num):
+                                    title = titles[i]
                                     description = description_dom[i].getText().strip()
-                                    image = image_dom[i]['src']
-                                    line = [year, 'Chevrolet', model, section, title, description, image]
+                                    image_url = 'https://web.archive.org' + image_dom[i]['src']
+                                    line = [year, self.make, model, section, title, description, image_url]
                                     print(line)
+                                    self.buick_class.write_csv(lines=[line], filename='chevrolet_2011.csv')
                         else:
-                            section_dom = module_container.find('h2', {'class': 'mainModuleHeading'})
+                            section = module_container.find_previous('h2',
+                                                                     {'class': 'mainModuleHeading'}).getText().strip()
                             one_thirds = module_container.find_all('div', recursive=False)
                             for one_third in one_thirds:
-                                title = one_third.find('div', class_='moduleSubheading')
-
+                                if one_third.find('div', class_='moduleSubheading'):
+                                    title = one_third.find('div', class_='moduleSubheading').get_text().strip()
+                                if one_third.find('p'):
+                                    description = one_third.find('p').getText().strip()
+                                if one_third.select('.imageWrapper img'):
+                                    image_url = 'https://web.archive.org' + one_third.select('.imageWrapper img')[0][
+                                        'src']
+                                if title and description and image_url:
+                                    line = [year, self.make, model, section, title, description, image_url]
+                                    print(line)
+                                    self.buick_class.write_csv(lines=[line], filename='chevrolet_2011.csv')
+                                    title = ''
+                                    description = ''
+                                    image_url = ''
             print(year, model)
 
+    def get_2011_gallery(self, filename):
+        initial_url = 'https://web.archive.org/web/20110120062330/http://www.chevrolet.com/'
+        brands = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser').select(
+            '#gnav_vehicles > ul.toplist > div > ul > li > a')
+        for brand in brands:
+            url = requests.get('https://web.archive.org' + brand['href']).url
+            models_dom = BeautifulSoup(requests.get(url=url).text, 'html.parser')
+            year_model = models_dom.select('#headBrand > li.upperHead')
+            if year_model:
+                year = year_model[0].text.strip()[:4]
+                model = year_model[0].text.strip()[4:].strip()
+                gallery_url = models_dom.find('span', text='Photos & Videos')
+                if gallery_url:
+                    gallery_url = 'https://web.archive.org' + gallery_url.parent['href']
+                    print(gallery_url)
+                    pictures_soup = BeautifulSoup(requests.get(url=gallery_url).content, 'html.parser')
+                    galleries = pictures_soup.select('#pGalleryList .gallery ul > li')
+                    for gallery in galleries:
+                        gallery_link = 'https://web.archive.org' + gallery.a.img['src']
+                        gallery_section = gallery.select('h5 > span')[0].text.split(' ')[-1]
+                        if len(gallery_section) > 2:
+                            line = [year, self.make, model, gallery_section, gallery_link]
+                            print(line)
+                            self.write_csv(lines=[line], filename=filename)
+            else:
+                tool_links = models_dom.select('#toolsLinks > a.learnmore')
+                for tool_link in tool_links:
+                    tool_link_url = 'https://web.archive.org' + tool_link['href']
+                    models_dom = BeautifulSoup(requests.get(url=tool_link_url).text, 'html.parser')
+                    year_model = models_dom.select('#headBrand > li.upperHead')
+                    if not year_model:
+                        continue
+                    year = year_model[0].text.strip()[:4]
+                    model = year_model[0].text.strip()[4:].strip()
+                    gallery_url = models_dom.find('span', text='Photos & Videos')
+                    if gallery_url:
+                        gallery_url = 'https://web.archive.org' + gallery_url.parent['href']
+                    print(gallery_url)
+                    pictures_soup = BeautifulSoup(requests.get(url=gallery_url).content, 'html.parser')
+                    galleries = pictures_soup.select('#pGalleryList .gallery ul > li')
+                    for gallery in galleries:
+                        gallery_link = 'https://web.archive.org' + gallery.a.img['src']
+                        gallery_section = gallery.select('h5 > span')[0].text.split(' ')[-1]
+                        if len(gallery_section) > 2:
+                            line = [year, self.make, model, gallery_section, gallery_link]
+                            print(line)
+                            self.buick_class.write_csv(lines=[line], filename=filename)
 
+    def get_2012(self):
+        initial_url = 'https://web.archive.org/web/20120102083417/http://www.chevrolet.com/'
+        brands = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser').select(
+            '#gnav_container div.narrow.bb-closed')
+        for brand in brands:
+            request_url = 'https://web.archive.org' + brand.find('a')['href']
+            soup = BeautifulSoup(requests.get(url=request_url).content, 'html.parser')
+            if soup.select('#gsnb_brand'):
+                print(request_url)
+                year_model = soup.select('#gsnb_brand')[0].get_text().split(' ')
+                year = year_model[1].strip()
+                model = year_model[13].strip()
+                section_dams = soup.select('.mainModuleHeading')
+                for section_dom in section_dams:
+                    if len(section_dom.text) < 3 or 'What' in section_dom.text or '.' in section_dom.text:
+                        continue
+                    section = section_dom.text.strip()
+                    wrapper_parent = section_dom.find_parent('div', {'class': 'moduleContainer'})
+                    if not wrapper_parent:
+                        wrapper_parent = section_dom.find_parent('div', class_='moduleWrapper')
+                    if not wrapper_parent:
+                        continue
+                    subheadings = wrapper_parent.find_all('div', class_='moduleSubheading')
+                    for subheading in subheadings:
+                        title = subheading.get_text().strip()
+                        image = 'https://web.archive.org' + subheading.find_previous('img')['src']
+                        if '.gif' in image:
+                            continue
+                        description = subheading.find_next('p').text.strip()
+                        line = [year, self.make, model, section, title, description, image]
+                        self.buick_class.write_csv(lines=[line], filename='chevrolet_2012.csv')
+                        print(line)
+            else:
+                learn_mores = soup.select('#toolsLinks > p.learn_more > a')
+                for learn_more in learn_mores:
+                    learn_url = 'https://web.archive.org' + learn_more['href']
+                    learn_soup = BeautifulSoup(requests.get(url=learn_url).content, 'html.parser')
+                    if learn_soup.select('#gsnb_brand'):
+                        print(learn_url)
+                        year_model = learn_soup.select('#gsnb_brand')[0].get_text().split(' ')
+                        year = year_model[1].strip()
+                        model = year_model[13].strip()
+                        section_dams = learn_soup.select('.mainModuleHeading')
+                        for section_dom in section_dams:
+                            if len(section_dom.text) < 3 or 'What' in section_dom.text or '.' in section_dom.text:
+                                continue
+                            section = section_dom.text.strip()
+                            wrapper_parent = section_dom.find_parent('div', {'class': 'moduleContainer'})
+                            if not wrapper_parent:
+                                wrapper_parent = section_dom.find_parent('div', class_='moduleWrapper')
+                            subheadings = wrapper_parent.find_all('div', class_='moduleSubheading')
+                            for subheading in subheadings:
+                                title = subheading.get_text().strip()
+                                image = 'https://web.archive.org' + subheading.find_previous('img')['src']
+                                if '.gif' in image:
+                                    continue
+                                description = subheading.find_next('p').text.strip()
+                                line = [year, self.make, model, section, title, description, image]
+                                self.buick_class.write_csv(lines=[line], filename='chevrolet_2012.csv')
+                                print(line)
+
+    def get_2012_gallery(self, filename):
+        initial_url = 'https://web.archive.org/web/20120102083417/http://www.chevrolet.com/'
+        brands = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser').select(
+            '#gnav_container div.narrow.bb-closed')
+        for brand in brands:
+            request_url = 'https://web.archive.org' + brand.find('a')['href'] + 'pictures/'
+            soup = BeautifulSoup(requests.get(url=request_url).content, 'html.parser')
+            if soup.select('#gsnb_brand'):
+                print(request_url)
+                year_model = soup.select('#gsnb_brand')[0].get_text().split(' ')
+                year = year_model[1].strip()
+                model = year_model[13].strip()
+                gallery_lis = soup.select('#htmlGallery > ul> li > a')
+                for gallery_li in gallery_lis:
+                    if gallery_li.select('.galleryThumb'):
+                        gallery_link = 'https://web.archive.org' + gallery_li.select('img.galleryThumb')[0]['src']
+                        section = gallery_li.parent.parent['class'][-1].upper()
+                        line = [year, self.make, model, section, gallery_link]
+                        print(line)
+                        self.write_csv(lines=[line], filename=filename)
+            else:
+                learn_mores = soup.select('#toolsLinks > p.learn_more > a')
+                for learn_more in learn_mores:
+                    learn_url = 'https://web.archive.org' + learn_more['href'] + 'pictures/'
+                    learn_soup = BeautifulSoup(requests.get(url=learn_url).content, 'html.parser')
+                    if learn_soup.select('#gsnb_brand'):
+                        print(learn_url)
+                        year_model = learn_soup.select('#gsnb_brand')[0].get_text().split(' ')
+                        year = year_model[1].strip()
+                        model = year_model[13].strip()
+                        gallery_lis = soup.select('#htmlGallery > ul> li > a')
+                        for gallery_li in gallery_lis:
+                            if gallery_li.select('.galleryThumb'):
+                                gallery_link = 'https://web.archive.org' + gallery_li.select('img.galleryThumb')[0][
+                                    'src']
+                                section = gallery_li.parent.parent['class'].split(' ')[-1].upper()
+                                line = [year, self.make, model, section, gallery_link]
+                                print(line)
+                                self.write_csv(lines=[line], filename=filename)
+
+    def get_2013(self):
+        initial_url = 'https://web.archive.org/web/20130102191357/http://www.chevrolet.com'
+        brands = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser').select('#hmc_id_0 > div > a')
+        for brand in brands:
+            year_model = brand.next_sibling.h3.a.text.strip()
+            year = year_model[:4]
+            model = year_model[4:].strip()
+            request_url = 'https://web.archive.org' + brand['href']
+            print(request_url)
+            soup = BeautifulSoup(requests.get(url=request_url).content, 'html.parser')
+            titles_dom = soup.find_all('h3', class_='pt')
+            for title_dom in titles_dom:
+                image_url = ''
+                if not title_dom.find_previous('h2', class_='hl_t'):
+                    continue
+                section = title_dom.find_previous('h2', class_='hl_t').text.strip()
+                title = title_dom.getText().strip()
+                image_dom = self.custome_parent(title_dom).find('img')
+                if image_dom and image_dom.has_attr('src'):
+                    image_url = 'https://web.archive.org' + image_dom['src']
+                descriptions_dom = title_dom.find_next('p').parent.find_all('p')
+                description = ''
+                for description_dom in descriptions_dom:
+                    description += description_dom.get_text()
+                line = [year, self.make, model, section, title, description.strip(), image_url]
+                self.write_csv(lines=[line], filename='chevrolet_2013.csv')
+                print(line)
+                section = ''
+                description = ''
+            year = ''
+            model = ''
+
+    def get_2013_gallery(self):
+        initial_url = 'https://web.archive.org/web/20130102191357/http://www.chevrolet.com/tools/help-choose-vehicles.html'
+        brands = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser').select('#hmc_id_0 > div > a')
+        for brand in brands:
+            year_model = brand.next_sibling.h3.a.text.strip()
+            year = year_model[:4]
+            model = year_model[4:].strip()
+            request_url = 'https://web.archive.org' + brand['href']
+            soup = BeautifulSoup(requests.get(url=request_url).content, 'html.parser')
+            gallery_url = 'https://web.archive.org' + soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0]['href']
+            print(gallery_url)
+            nav_pages = BeautifulSoup(requests.get(url=gallery_url.replace('pictures', 'exterior-pictures')).content, 'lxml').select('ul > li.nav_page > a')
+            for nav_page in nav_pages:
+                nav_link = 'https://web.archive.org' + nav_page['href']
+                nav_section = nav_page.text.strip()
+                thumbnail_soup = BeautifulSoup(requests.get(url=nav_link).content, 'html.parser')
+                thumbnails = thumbnail_soup.select('ul.thumbnails > li')
+                for thumbnail in thumbnails:
+                    if not thumbnail.a:
+                        continue
+                    image_url = 'https://web.archive.org' + thumbnail.a['href']
+                    if image_url.endswith(('.png', '.jpg', '.jpeg')):
+                        gallery_line = [year, self.make, model, nav_section, image_url]
+                        print(gallery_line)
+                        self.write_csv_gallery(lines=[gallery_line], filename='chevrolet_gallery_2013.csv')
+
+    def custome_parent(self, child):
+        if child.find('img'):
+            return child
+        return self.custome_parent(child.parent)
+
+    def get_2014(self):
+        def find_section(element):
+            if element.parent:
+                if element.has_attr('class') and element['class'][0] == 'mod' and element['class'][1] == 'modCnt_well_1' \
+                        and element['class'][2] == 'mds-cmp-content20':
+                    if element.has_attr('id'):
+                        return element['id']
+                    else:
+                        return None
+                return find_section(element.parent)
+            return None
+
+        initial_url = 'http://web.archive.org/web/20140207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                'ul.ull.ui-layout-horizontal.ui-layout-left > li:nth-child(1)')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select.find('a')['href'][1:]
+                bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                if not bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    continue
+                year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                titles_dom = bar_soup.find_all('h3', class_='pt')
+                for title_dom in titles_dom:
+                    image = ''
+                    if not title_dom.find_previous('h2', class_='hl_t'):
+                        continue
+                    section = title_dom.find_previous('h2', class_='hl_t').text.strip()
+                    section_id = find_section(title_dom)
+                    if section_id and len(bar_soup.select('#%s' % section_id)) > 1:
+                        search = {'href': '#%s' % section_id}
+                        section_foo = bar_soup.find('a', **search)
+                        if section_foo:
+                            section = section_foo.get_text().strip().split(' ')[-1]
+                    title = title_dom.getText().strip()
+                    descriptions_dom = title_dom.find_next('p').parent.find_all('p')
+                    description = ''
+                    for description_dom in descriptions_dom:
+                        description += description_dom.get_text()
+                    image_dom = self.custome_parent(title_dom).find('img')
+                    if image_dom and image_dom.has_attr('src'):
+                        image = 'https://web.archive.org' + image_dom['src']
+                    if not title or not description or not image:
+                        continue
+                    if '.html' in image:
+                        continue
+                    line = [year, self.make, model, section, title, description.strip(), image]
+                    self.write_csv(lines=[line], filename='chevrolet_2014.csv')
+                    print(line)
+                    section = ''
+
+                accessory_url = 'https://web.archive.org' + \
+                                bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a')[0][
+                                    'href']
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).content, 'lxml')
+                figures = accessory_soup.select('.accessory_item_container > ul > li > div > figure')
+                for figure in figures:
+                    accessory_section = figure.find_parent('li')['class'][0].upper().strip()
+                    if not figure.img:
+                        continue
+                    image_url = 'https://web.archive.org' + figure.img['src']
+                    image_title = figure.figcaption.text.strip()
+                    image_description = figure.parent.find('div', {'class': 'tx'}, recursive=False).span.get_text().strip()
+                    accessory_line = [year, self.make, model, accessory_section, image_title, image_description, image_url]
+                    print(accessory_line)
+                    self.write_csv(lines=[accessory_line], filename='chevrolet_2014.csv')
+                    image_url = ''
+                    image_description = ''
+                    image_title = ''
+                    accessory_section = ''
+                year = ''
+                model = ''
+
+    def get_2014_gallery(self):
+        initial_url = 'http://web.archive.org/web/20140207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                'ul.ull.ui-layout-horizontal.ui-layout-left > li:nth-child(1)')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select.find('a')['href'][1:]
+                bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                gallery_url = 'https://web.archive.org' + bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0]['href']
+                nav_pages = BeautifulSoup(requests.get(url=gallery_url).content, 'lxml').select('ul > li.nav_page > a')
+                for nav_page in nav_pages:
+                    nav_section = nav_page.text.strip()
+                    nav_url = 'https://web.archive.org' + nav_page['href']
+                    nav_soup = BeautifulSoup(requests.get(url=nav_url).content, 'lxml')
+                    nav_lis = nav_soup.select('ul.thumbnails > li > a')
+                    for nav_li in nav_lis:
+                        nav_image = 'https://web.archive.org' + nav_li['href']
+                        gallery_line = [year, self.make, model, nav_section, nav_image]
+                        print(gallery_line)
+                        self.write_csv_gallery(lines=gallery_line, filename='chevrolet_gallery_2014.csv')
+                        nav_image = ''
+                    nav_section = ''
+                year = ''
+                model = ''
+
+    def get_2015(self):
+        initial_url = 'http://web.archive.org/web/20150201225455/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        footer_ul = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul')
+        footer_lis = footer_ul.select('li > a')
+        for footer_li in footer_lis:
+            vehicle_link = 'https://web.archive.org' + footer_li['href']
+            print(vehicle_link)
+
+    def gather_gallery(self):
+        self.get_2011_gallery()
+        self.get_2012_gallery()
+
+
+# toolsLinks > p.learn_more
 class Chevrolet_count:
     def __init__(self):
         self.csv_header = [['MAKE', 'MODEL', 'ID', 'YEAR', 'GALLERY', 'PDF', 'HOW_TO_VIDEOS', 'FEATURES']]
@@ -1373,6 +1802,6 @@ if __name__ == '__main__':
     buick = Buick()
     toyota = Toyota()
     chevrolet = Chevrolet()
+    chevrolet.get_2015()
     chevrolet_count = Chevrolet_count()
-    chevrolet_count.count()
 print("=======================The End===========================")
