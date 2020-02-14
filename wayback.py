@@ -1190,6 +1190,79 @@ class Toyota:
         total_lines.sort(key=lambda x: (x[0], x[2]))
         self.buick_class.write_csv(lines=total_lines, filename='Toyota_Features.csv')
 
+    def additional_2019_2020_features(self):
+        chevrolet_class = Chevrolet()
+        initial_url = 'https://www.toyota.com/all-vehicles/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        models_dom = initial_soup.select('#vehicle-cards .tcom-vehicle-card-image > a')
+        feature_write_lines = []
+        gallery_write_lines = []
+        for model_dom in models_dom:
+            model_link = 'https://toyota.com' + model_dom['href']
+            model_soup = BeautifulSoup(requests.get(url=model_link).content, 'lxml')
+            feature_url = model_soup.select('#wrapper .tcom-tiered-subnav-wrapper > ul > li:nth-child(3) > a')
+            if feature_url:
+                request_url = 'https://toyota.com' + feature_url[0]['href']
+                print(request_url)
+                feature_soup = BeautifulSoup(requests.get(url=request_url).text, 'html.parser')
+                year_model = feature_soup.find('a', class_='tcom-tiered-subnav-title')
+                year = year_model.text[:4]
+                model = year_model.text[4:].strip()
+                slides = feature_soup.find_all('h3', class_='slide-title')
+                for slide in slides:
+                    section = slide.find_previous('h2', class_='category-title').text.strip()
+                    title = slide.get_text().strip()
+                    description = slide.find_next('div', {'class': 'slide-description'}).getText().strip()
+                    picture = 'https://toyota.com' + slide.find_previous('picture').source['data-srcset']
+                    feature_line = [year, 'Toyota', model, section, title, description, picture.strip()]
+                    print(feature_line)
+                    feature_write_lines.append(feature_line)
+                    section, title, description, picture = '', '', '', ''
+                gallery_url = 'https://toyota.com' + \
+                              model_soup.select('.tcom-tiered-subnav-wrapper > ul > li:nth-child(2) > a')[0][
+                                  'href'] + '/exterior'
+                gallery_soup = BeautifulSoup(requests.get(url=gallery_url).content, 'lxml')
+                pictures = gallery_soup.select('a > div.tcom-image-cta-picture > picture')
+                for picture in pictures:
+                    gallery_link = 'https://toyota.com' + picture.source['data-srcset']
+                    gallery_section = picture.find_parent('section', {'class': 'gallery-container'})['id'].split('-')[0]
+                    line = [year, 'Toyota', model, gallery_section, gallery_link.strip()]
+                    print(line)
+                    gallery_write_lines.append(line)
+                    gallery_link, gallery_section = '', ''
+                year, model = '', ''
+            else:
+                year = '2019'
+                model = 'MIRAI'
+                feature_soup = BeautifulSoup(requests.get(url=model_link).content, 'lxml')
+                gallery_items = feature_soup.select('.gallery-group .gallery__item')
+                for gallery_item in gallery_items:
+                    section = gallery_item.parent['class'][1]
+                    if section == 'all':
+                        continue
+                    image_url = 'https://toyota.com/mirai/' + gallery_item.img['src']
+                    gallery_line = [year, 'TOYOTA', model, section, image_url.strip()]
+                    print(gallery_line)
+                    gallery_write_lines.append(gallery_line)
+                    feature_lines = [
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Pre-Collision System with Pedestrian Detection', 'Pre-Collision System with Pedestrian Detection43 (PCS w/PD) is designed to help keep the road safe by detecting a vehicle, pedestrian or bicyclist in certain situations. The latest system has enhanced low-light capabilities for pedestrian detection. By combining millimeter-wave radar with a camera capable of certain shape recognition, the system provides an audio/visual alert, warning you of a possible collision under certain circumstances. If you don’t react, the system is designed for automatic braking47 support to help mitigate the potential for a collision.', 'https://toyota.com/mirai/assets/modules/tss/images/1024/pre-collision_System.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Dynamic Radar Cruise Control', 'Intended for highways and similar to “constant speed” cruise control, Dynamic Radar Cruise Control (DRCC)4 lets you drive at a preset speed. DRCC is designed to function at speeds of 25-110 mph and uses vehicle-to-vehicle distance control, which is designed to adjusts your speed, to help you maintain a preset distance from the vehicle ahead of you that is driving at a slower speed. DRCC uses a front-grille-mounted radar and an in-vehicle camera designed to detect vehicles and their distance. If a driver is traveling slower than you, or within your preset range, DRCC will automatically slow your vehicle down without deactivating cruise control. If DRCC determines you need to slow down more, an audio and visual alert notifies you and brakes are applied. When there’s no longer a vehicle driving slower than your set speed in front of you, DRCC will then accelerate and regular cruise control will resume.', 'https://toyota.com/mirai/assets/modules/tss/images/1024/dynamic_radar_cruise_control.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Lane Departure Alert with Steering Assist', 'Using Road Edge Detection or by detecting visible lane markings, the Lane Departure Alert with Steering Assist (LDA w/SA)7 issues both an audible alert and visual warning on the MID screen if an inadvertent lane departure is detected. If the system determines that the driver is not taking corrective steering action, the Steering Assist function is designed to initiate and provide gentle corrective steering to help keep Mirai in the lane.', 'https://toyota.com/mirai/assets/modules/tss/images/1024/alert_with_steering_assist_system.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Automatic High Beams', 'Automatic High Beams (AHB)10 are a safety system designed to help you see more clearly at night—without distracting other drivers. Designed to activate at speeds above 25 mph, AHB rely on an in-vehicle camera to help detect the headlights of oncoming vehicles and taillights of preceding vehicles, then automatically toggle between high and low beams accordingly to provide the appropriate amount of light. By using high beams more frequently, the system may allow earlier detection of pedestrians and obstacles.', 'https://toyota.com/mirai/assets/modules/tss/images/1024/automatic_high_beams.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Road Sign Assist', 'Using a forward-facing intelligent camera, Road Sign Assist45 is designed to detect speed limit signs, stop signs and yield signs, and displays them on the MID.', 'https://toyota.com/mirai/assets/modules/tss/images/1024/road_sign_assist.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Body Structure and Design', 'Mirai features a unique frame designed to distribute crash forces efficiently. In the event of a collision, the impact force is distributed around the passenger cabin and the Toyota fuel cell stack and hydrogen tanks, reducing body deformation and helping to reduce the chance of injury. The collapsible steering column also helps protect the driver by absorbing force during impact.', 'https://toyota.com/mirai/assets/modules/car_page_safety_technology/images/body-structure-and-design.jpg'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Advanced Safety System', 'Mirai is equipped with Toyota’s Star Safety System™, which is a suite of safety features for braking, stability and traction control. These include Vehicle Stability Control (VSC)1, Traction Control (TRAC), 4-wheel Anti-lock Brake System (ABS), Electronic Brake-force Distribution (EBD), Brake Assist (BA)2 and Smart Stop Technology® (SST)3.', 'https://toyota.com/mirai/assets/modules/car_page_safety_technology/images/star-safety-system.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Safety Connect®', 'With available Safety Connect®41, emergency assistance is within your reach. Via Toyota’s 24/7 call center, Safety Connect® offers subscribers helpful features such as Emergency Roadside Assistance70, Stolen Vehicle Locator71, Roadside Assistance and Automatic Collision Notification.', 'https://toyota.com/mirai/assets/modules/car_page_safety_technology/images/safety-connect.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Eight SRS Airbags', 'The cabin is equipped with a driver and front passenger Advanced Airbag System8, front seat-mounted side airbags for the driver and front passenger, front and rear side curtain airbags, plus driver knee and front passenger seat-cushion airbags. They’re all part of a system designed to help keep you safe.', 'https://toyota.com/mirai/assets/modules/car_page_safety_technology/images/eight-airbags.png'],
+                        ['2019', 'TOYOTA', 'MIRAI', 'SAFETY', 'Blind Spot Monitor with Rear Cross-Traffic Alert', 'When the Blind Spot Monitor (BSM)9 detects a vehicle, it illuminates a warning indicator on the appropriate sideview mirror to help let you know when it’s safe to change lanes. And when you slowly back out of a driveway or parking spot, Rear Cross-Traffic Alert (RCTA)11 provides audible and visual indicators to warn you of approaching vehicles.', 'https://toyota.com/mirai/assets/modules/car_page_safety_technology/images/blind-spot.png'],
+                    ]
+                    for feature_line in feature_lines:
+                        feature_write_lines.append(feature_line)
+        feature_write_lines.sort(key=lambda x: (x[0], x[2]))
+        gallery_write_lines.sort(key=lambda x: (x[0], x[2]))
+        chevrolet_class.write_csv_gallery(lines=gallery_write_lines, filename='Toyota_Galleries_2019_2020.csv')
+        chevrolet_class.write_csv(lines=feature_write_lines, filename='Toyota_Features_2019_2020.csv')
+
 
 class Chevrolet:
     def __init__(self):
@@ -1208,7 +1281,7 @@ class Chevrolet:
         if not os.path.isdir('output'):
             os.mkdir('output')
         if not os.path.isfile('output/%s' % filename):
-            self.write_direct_csv(lines=self.csv_header_gallery, filename=filename)
+            self.write_direct_csv(lines=self.csv_header, filename=filename)
         self.write_direct_csv(lines=lines, filename=filename)
 
     def write_csv_gallery(self, lines, filename):
@@ -1693,22 +1766,481 @@ class Chevrolet:
                     nav_lis = nav_soup.select('ul.thumbnails > li > a')
                     for nav_li in nav_lis:
                         nav_image = 'https://web.archive.org' + nav_li['href']
+                        if not nav_image.endswith(('jpg', 'png', 'jpeg')):
+                            continue
                         gallery_line = [year, self.make, model, nav_section, nav_image]
                         print(gallery_line)
-                        self.write_csv_gallery(lines=gallery_line, filename='chevrolet_gallery_2014.csv')
+                        self.write_csv_gallery(lines=[gallery_line], filename='chevrolet_gallery_2014.csv')
                         nav_image = ''
                     nav_section = ''
                 year = ''
                 model = ''
 
     def get_2015(self):
+        def find_section(element):
+            if element.parent:
+                if element.has_attr('class') and element['class'][0] == 'mod' and element['class'][1] == 'modCnt_well_1' \
+                        and element['class'][2] == 'mds-cmp-content20':
+                    if element.has_attr('id'):
+                        return element['id']
+                    else:
+                        return None
+                return find_section(element.parent)
+            return None
         initial_url = 'http://web.archive.org/web/20150201225455/http://www.chevrolet.com/'
         initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
-        footer_ul = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul')
+        footer_ul = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul')[0]
         footer_lis = footer_ul.select('li > a')
         for footer_li in footer_lis:
             vehicle_link = 'https://web.archive.org' + footer_li['href']
-            print(vehicle_link)
+            learn_more = BeautifulSoup(requests.get(url=vehicle_link).content, 'lxml')
+            learn_more_links = learn_more.select('li:nth-child(1) > .cnt_btn_1.mod.modCnt_btn_1.section.mds-cmp-content02 > a')
+            for learn_more_link in learn_more_links:
+                if 'https://web.archive.org' not in learn_more_link['href']:
+                    model_link = 'https://web.archive.org' + learn_more_link['href']
+                model_soup = BeautifulSoup(requests.get(url=model_link).content, 'lxml')
+                if not model_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    continue
+                year_model = model_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                titles_dom = model_soup.find_all('h3', class_='pt')
+                for title_dom in titles_dom:
+                    if not title_dom.find_previous('h2', class_='hl_t'):
+                        continue
+                    section = title_dom.find_previous('h2', class_='hl_t').text.strip()
+                    section_id = find_section(title_dom)
+                    if section_id and len(model_soup.select('#%s' % section_id)) > 1:
+                        search = {'href': '#%s' % section_id}
+                        section_foo = model_soup.find('a', **search)
+                        if section_foo:
+                            section = section_foo.get_text().strip().split(' ')[-1]
+                    title = title_dom.get_text().strip()
+                    description = ''
+                    description_doms = title_dom.find_next('div', class_='fck_authorsinput tx').find_all('p')
+                    for description_dom in description_doms:
+                        description += description_dom.get_text()
+                    image_dom = self.custome_parent(title_dom).find('img')
+                    if image_dom and image_dom.has_attr('src'):
+                        image = 'https://web.archive.org' + image_dom['src']
+                    if not title or not description or not image:
+                        continue
+                    if not image.endswith(('.png', '.jpg', '.jpeg')):
+                        continue
+                    line = [year, self.make, model, section, title, description.strip(), image]
+                    print(line)
+                    self.write_csv(lines=[line], filename='chevrolet_2015.csv')
+                    section = ''
+
+                accessory_url = 'https://web.archive.org' + \
+                                model_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a')[
+                                    0][
+                                    'href']
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).content, 'lxml')
+                figures = accessory_soup.select('.accessory_item_container > ul > li > div > figure')
+                for figure in figures:
+                    accessory_section = figure.find_parent('li')['class'][0].upper().strip()
+                    if not figure.img:
+                        continue
+                    image_url = 'https://web.archive.org' + figure.img['src']
+                    image_title = figure.figcaption.text.strip()
+                    image_description = figure.parent.find('div', {'class': 'tx'},
+                                                           recursive=False).span.get_text().strip()
+                    accessory_line = [year, self.make, model, accessory_section, image_title, image_description,
+                                      image_url]
+                    print(accessory_line)
+                    self.write_csv(lines=[accessory_line], filename='chevrolet_2015.csv')
+                    image_url = ''
+                    image_description = ''
+                    image_title = ''
+                    accessory_section = ''
+                year = ''
+                model = ''
+
+    def get_2015_gallery(self):
+        count = []
+        initial_url = 'http://web.archive.org/web/20150207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                'ul.ull.ui-layout-horizontal.ui-layout-left > li:nth-child(1)')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select.find('a')['href'][1:]
+                bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                if bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.replace('THE', '').strip()
+                    year = year_model[:4]
+                    model = year_model[4:].strip()
+                else:
+                    count.append(bar_url)
+                    year = '2015'
+                    model = 'Sonic'
+                if bar_url.endswith('.pdf'):
+                    continue
+                gallery_url = 'https://web.archive.org' + bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0]['href']
+                nav_pages = BeautifulSoup(requests.get(url=gallery_url).content, 'lxml').select('ul > li.nav_page > a')
+                for nav_page in nav_pages:
+                    nav_section = nav_page.text.strip()
+                    nav_url = 'https://web.archive.org' + nav_page['href']
+                    nav_soup = BeautifulSoup(requests.get(url=nav_url).content, 'lxml')
+                    nav_lis = nav_soup.select('ul.thumbnails > li > a')
+                    for nav_li in nav_lis:
+                        nav_image = 'https://web.archive.org' + nav_li['href']
+                        if not nav_image.endswith(('.png', 'jpg', 'jpeg')):
+                            continue
+                        gallery_line = [year, self.make, model, nav_section, nav_image]
+                        print(gallery_line)
+                        self.write_csv_gallery(lines=[gallery_line], filename='chevrolet_gallery_2015.csv')
+                        nav_image = ''
+                    nav_section = ''
+                year = ''
+                model = ''
+        print(count)
+
+    def get_2016(self):
+        def find_section(element):
+            if element.parent:
+                if element.has_attr('class') and element['class'][0] == 'mod' and element['class'][1] == 'modCnt_well_1' \
+                        and element['class'][2] == 'mds-cmp-content20':
+                    if element.has_attr('id'):
+                        return element['id']
+                    else:
+                        return None
+                return find_section(element.parent)
+            return None
+
+        initial_url = 'http://web.archive.org/web/20160207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                '.cnt_btn_1.mod.modCnt_btn_1.section.mds-cmp-content02 > a')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select['href'].strip()[1:]
+                try:
+                    bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                except:
+                    continue
+                if not bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    continue
+                year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                titles_dom = bar_soup.find_all('h3', class_='pt')
+                for title_dom in titles_dom:
+                    image = ''
+                    if not title_dom.find_previous('h2', class_='hl_t'):
+                        continue
+                    section = title_dom.find_previous('h2', class_='hl_t').text.strip()
+                    section_id = find_section(title_dom)
+                    if section_id and len(bar_soup.select('#%s' % section_id)) > 1:
+                        search = {'href': '#%s' % section_id}
+                        section_foo = bar_soup.find('a', **search)
+                        if section_foo:
+                            section = section_foo.get_text().strip().split(' ')[-1]
+                    title = title_dom.getText().strip()
+                    descriptions_dom = title_dom.find_next('p').parent.find_all('p')
+                    description = ''
+                    for description_dom in descriptions_dom:
+                        description += description_dom.get_text()
+                    image_dom = self.custome_parent(title_dom).find('img')
+                    if image_dom and image_dom.has_attr('src'):
+                        if 'https://web.archive.org' in image_dom['src']:
+                            image = image_dom['src']
+                        else:
+                            image = 'https://web.archive.org' + image_dom['src']
+                    if not title or not description or not image:
+                        continue
+                    if not image.endswith(('.jpg', '.png', '.jpeg')):
+                        continue
+                    line = [year, self.make, model, section, title, description.strip(), image]
+                    self.write_csv(lines=[line], filename='chevrolet_2016.csv')
+                    print(line)
+                    section = ''
+                print(bar_url)
+                if bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a'):
+                    accessory_url = 'https://web.archive.org' + \
+                                    bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a')[0][
+                                        'href']
+                else:
+                    accessory_url = 'https://web.archive.org' + bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0][
+                                        'href']
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).content, 'lxml')
+                figures = accessory_soup.select('.accessory_item_container > ul > li > div > figure')
+                for figure in figures:
+                    accessory_section = figure.find_parent('li')['class'][0].upper().strip()
+                    if not figure.img:
+                        continue
+                    if 'https://web.archive.org' in figure.img['src']:
+                        image_url = figure.img['src']
+                    else:
+                        image_url = 'https://web.archive.org' + figure.img['src']
+                    image_title = figure.figcaption.text.strip()
+                    if not figure.parent.find('div', {'class': 'tx'}, recursive=False):
+                        continue
+                    image_description = figure.parent.find('div', {'class': 'tx'}, recursive=False).span.get_text().strip()
+                    accessory_line = [year, self.make, model, accessory_section, image_title, image_description, image_url]
+                    print(accessory_line)
+                    self.write_csv(lines=[accessory_line], filename='chevrolet_2016.csv')
+                    image_url = ''
+                    image_description = ''
+                    image_title = ''
+                    accessory_section = ''
+                year = ''
+                model = ''
+
+    def get_2016_gallery(self):
+        initial_url = 'http://web.archive.org/web/20160207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                '.cnt_btn_1.mod.modCnt_btn_1.section.mds-cmp-content02 > a')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select['href'][1:]
+                try:
+                    bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                except:
+                    continue
+                if not bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    continue
+                year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                gallery_url = 'https://web.archive.org' + bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0]['href']
+                nav_pages = BeautifulSoup(requests.get(url=gallery_url).content, 'lxml').select('ul > li.nav_page > a')
+                for nav_page in nav_pages:
+                    nav_section = nav_page.text.strip()
+                    nav_url = 'https://web.archive.org' + nav_page['href']
+                    nav_soup = BeautifulSoup(requests.get(url=nav_url).content, 'lxml')
+                    nav_lis = nav_soup.select('ul.thumbnails > li > a')
+                    for nav_li in nav_lis:
+                        nav_image = 'https://web.archive.org' + nav_li['href']
+                        if not nav_image.endswith(('.png', '.jpg', '.jpeg')):
+                            continue
+                        gallery_line = [year, self.make, model, nav_section, nav_image]
+                        print(gallery_line)
+                        self.write_csv_gallery(lines=[gallery_line], filename='chevrolet_gallery_2016.csv')
+                        nav_image = ''
+                    nav_section = ''
+                year = ''
+                model = ''
+
+    def get_2017(self):
+        def find_section(element):
+            if element.parent:
+                if element.has_attr('class') and element['class'][0] == 'mod' and element['class'][1] == 'modCnt_well_1' \
+                        and element['class'][2] == 'mds-cmp-content20':
+                    if element.has_attr('id'):
+                        return element['id']
+                    else:
+                        return None
+                return find_section(element.parent)
+            return None
+
+        initial_url = 'http://web.archive.org/web/20170207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                '.cnt_btn_1.mod.modCnt_btn_1.section.mds-cmp-content02 > a')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select['href'].strip()[1:]
+                try:
+                    bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                except:
+                    continue
+                if not bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    continue
+                year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                titles_dom = bar_soup.find_all('h3', class_='pt')
+                for title_dom in titles_dom:
+                    image = ''
+                    if not title_dom.find_previous('h2', class_='hl_t'):
+                        continue
+                    section = title_dom.find_previous('h2', class_='hl_t').text.strip()
+                    section_id = find_section(title_dom)
+                    if section_id and len(bar_soup.select('#%s' % section_id)) > 1:
+                        search = {'href': '#%s' % section_id}
+                        section_foo = bar_soup.find('a', **search)
+                        if section_foo:
+                            section = section_foo.get_text().strip().split(' ')[-1]
+                    title = title_dom.getText().strip()
+                    descriptions_dom = title_dom.find_next('p').parent.find_all('p')
+                    description = ''
+                    for description_dom in descriptions_dom:
+                        description += description_dom.get_text()
+                    image_dom = self.custome_parent(title_dom).find('img')
+                    if image_dom and image_dom.has_attr('src'):
+                        image = 'https://web.archive.org' + image_dom['src']
+                    if not title or not description or not image:
+                        continue
+                    if '.html' in image:
+                        continue
+                    line = [year, self.make, model, section, title, description.strip(), image]
+                    self.write_csv(lines=[line], filename='chevrolet_2017.csv')
+                    print(line)
+                    section = ''
+                print(bar_url)
+                if bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a'):
+                    accessory_url = 'https://web.archive.org' + \
+                                    bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a')[0][
+                                        'href']
+                else:
+                    accessory_url = 'https://web.archive.org' + bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0][
+                                        'href']
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).content, 'lxml')
+                figures = accessory_soup.select('.accessory_item_container > ul > li > div > figure')
+                for figure in figures:
+                    accessory_section = figure.find_parent('li')['class'][0].upper().strip()
+                    if not figure.img:
+                        continue
+                    image_url = 'https://web.archive.org' + figure.img['src']
+                    image_title = figure.figcaption.text.strip()
+                    if not figure.parent.find('div', {'class': 'tx'}, recursive=False):
+                        continue
+                    image_description = figure.parent.find('div', {'class': 'tx'}, recursive=False).span.get_text().strip()
+                    accessory_line = [year, self.make, model, accessory_section, image_title, image_description, image_url]
+                    print(accessory_line)
+                    self.write_csv(lines=[accessory_line], filename='chevrolet_2017.csv')
+                    image_url = ''
+                    image_description = ''
+                    image_title = ''
+                    accessory_section = ''
+                year = ''
+                model = ''
+
+    def get_2017_gallery(self):
+        initial_url = 'http://web.archive.org/web/20170207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                '.cnt_btn_1.mod.modCnt_btn_1.section.mds-cmp-content02 > a')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select['href'][1:]
+                try:
+                    bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                except:
+                    continue
+                if not bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    continue
+                year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                gallery_url = 'https://web.archive.org' + bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0]['href']
+                nav_pages = BeautifulSoup(requests.get(url=gallery_url).content, 'lxml').select('ul > li.nav_page > a')
+                for nav_page in nav_pages:
+                    nav_section = nav_page.text.strip()
+                    nav_url = 'https://web.archive.org' + nav_page['href']
+                    nav_soup = BeautifulSoup(requests.get(url=nav_url).content, 'lxml')
+                    nav_lis = nav_soup.select('ul.thumbnails > li > a')
+                    for nav_li in nav_lis:
+                        nav_image = 'https://web.archive.org' + nav_li['href']
+                        if not nav_image.endswith(('.png', '.jpg', '.jpeg')):
+                            continue
+                        gallery_line = [year, self.make, model, nav_section, nav_image]
+                        print(gallery_line)
+                        self.write_csv_gallery(lines=gallery_line, filename='chevrolet_gallery_2017.csv')
+                        nav_image = ''
+                    nav_section = ''
+                year = ''
+                model = ''
+
+    def get_2018(self):
+        def find_section(element):
+            if element.parent:
+                if element.has_attr('class') and element['class'][0] == 'mod' and element['class'][1] == 'modCnt_well_1' \
+                        and element['class'][2] == 'mds-cmp-content20':
+                    if element.has_attr('id'):
+                        return element['id']
+                    else:
+                        return None
+                return find_section(element.parent)
+            return None
+
+        initial_url = 'http://web.archive.org/web/20180207055341/http://www.chevrolet.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        foo = initial_soup.select('#mds-area-footer > div.nav_sitemap_footer_c1 > div > div.pf6a > div > ul > li > a')
+        for f in foo:
+            foo_url = 'https://web.archive.org/%s' % f['href']
+            foo_soup = BeautifulSoup(requests.get(url=foo_url).content, 'lxml').select(
+                '.cnt_btn_1.mod.modCnt_btn_1.section.mds-cmp-content02 > a')
+            for foo_select in foo_soup:
+                bar_url = 'https://web.archive.org' + foo_select['href'].strip()[1:]
+                try:
+                    bar_soup = BeautifulSoup(requests.get(url=bar_url).content, 'lxml')
+                except:
+                    continue
+                if not bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)'):
+                    continue
+                year_model = bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dt > a:nth-child(1)')[0].text.strip()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                titles_dom = bar_soup.find_all('h3', class_='pt')
+                for title_dom in titles_dom:
+                    image = ''
+                    if not title_dom.find_previous('h2', class_='hl_t'):
+                        continue
+                    section = title_dom.find_previous('h2', class_='hl_t').text.strip()
+                    section_id = find_section(title_dom)
+                    if section_id and len(bar_soup.select('#%s' % section_id)) > 1:
+                        search = {'href': '#%s' % section_id}
+                        section_foo = bar_soup.find('a', **search)
+                        if section_foo:
+                            section = section_foo.get_text().strip().split(' ')[-1]
+                    title = title_dom.getText().strip()
+                    descriptions_dom = title_dom.find_next('p').parent.find_all('p')
+                    description = ''
+                    for description_dom in descriptions_dom:
+                        description += description_dom.get_text()
+                    image_dom = self.custome_parent(title_dom).find('img')
+                    if image_dom and image_dom.has_attr('src'):
+                        image = 'https://web.archive.org' + image_dom['src']
+                    if not title or not description or not image:
+                        continue
+                    if '.html' in image:
+                        continue
+                    line = [year, self.make, model, section, title, description.strip(), image]
+                    self.write_csv(lines=[line], filename='chevrolet_2018.csv')
+                    print(line)
+                    section = ''
+                print(bar_url)
+                if bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a'):
+                    accessory_url = 'https://web.archive.org' + \
+                                    bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd >ul > li:nth-child(4) > a')[0][
+                                        'href']
+                else:
+                    accessory_url = 'https://web.archive.org' + bar_soup.select('#mds-cmp-2ndlevelnavigation > dl > dd > ul > li:nth-child(2) > a')[0][
+                                        'href']
+                accessory_soup = BeautifulSoup(requests.get(url=accessory_url).content, 'lxml')
+                figures = accessory_soup.select('.accessory_item_container > ul > li > div > figure')
+                for figure in figures:
+                    accessory_section = figure.find_parent('li')['class'][0].upper().strip()
+                    if not figure.img:
+                        continue
+                    image_url = 'https://web.archive.org' + figure.img['src']
+                    image_title = figure.figcaption.text.strip()
+                    if not figure.parent.find('div', {'class': 'tx'}, recursive=False):
+                        continue
+                    image_description = figure.parent.find('div', {'class': 'tx'}, recursive=False).span.get_text().strip()
+                    accessory_line = [year, self.make, model, accessory_section, image_title, image_description, image_url]
+                    print(accessory_line)
+                    self.write_csv(lines=[accessory_line], filename='chevrolet_2018.csv')
+                    image_url = ''
+                    image_description = ''
+                    image_title = ''
+                    accessory_section = ''
+                year = ''
+                model = ''
 
     def gather_gallery(self):
         self.get_2011_gallery()
@@ -1802,6 +2334,7 @@ if __name__ == '__main__':
     buick = Buick()
     toyota = Toyota()
     chevrolet = Chevrolet()
-    chevrolet.get_2015()
+    # chevrolet.get_2017_gallery()
+    chevrolet.get_2018()
     chevrolet_count = Chevrolet_count()
 print("=======================The End===========================")
