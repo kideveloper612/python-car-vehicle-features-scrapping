@@ -2890,27 +2890,115 @@ class Features_2020:
             if 'https://' in vehicle_link['href']:
                 continue
             link = 'https://www.dodge.com' + vehicle_link['href']
+            model = vehicle_link.select('span.vehicle-name.gcss-colors-text-body-primary')[0].text.strip()
             slider_soup = BeautifulSoup(requests.get(url=link).content, 'lxml')
             model_year = slider_soup.find('div', attrs={'class': 'model-details-inner'})
             if model_year:
                 year = model_year.find('div', {'class': 'model-name-text'}).text[:4].strip()
-                model = model_year.find('div', {'class': 'model-name-text'}).text[4:].strip()
                 li_links = slider_soup.select('li.nav-section-link a')
                 links = []
                 for li_link in li_links:
                     section = li_link.get_text().strip()
                     link_url = 'https://www.dodge.com' + li_link['href']
                     if link_url not in links:
-                        print(section, link_url)
-                        link_soup = BeautifulSoup(requests.get(url=link_url))
-
+                        link_soup = BeautifulSoup(requests.get(url=link_url).content, 'html5lib')
+                        brands = link_soup.find_all('h4', {'class': 'title-header'})
+                        for brand in brands:
+                            title = brand.text.strip()
+                            description = brand.find_next('p').text.strip()
+                            image = 'https://www.dodge.com' + brand.find_previous('img')['src']
+                            line = [year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            print(line)
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                        blurbs = link_soup.find_all(class_='blurb-title')
+                        for blurb in blurbs:
+                            title = blurb.text.strip()
+                            description = blurb.find_next(class_=re.compile('description'))
+                            if not blurb.find_next('img'):
+                                continue
+                            image = 'https://www.dodge.com' + blurb.find_next('img')['src']
+                            line = [year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            print(line)
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                        typegraphies = link_soup.find_all('h3', {'class': 'section-header__title gcss-typography-brand-heading-3 dodge'})
+                        for typegraphy in typegraphies:
+                            title = typegraphy.text.strip()
+                            description = typegraphy.find_next('p').text.strip()
+                            image = 'https://www.dodge.com' + typegraphy.find_next('img')['src']
+                            line = [year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            print(line)
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                        boxes = link_soup.find_all('h3', 'box-title')
+                        for box in boxes:
+                            title = box.text.strip()
+                            description = box.find_next('p').text.strip()
+                            image = 'https://www.dodge.com' +  box.find_previous('img')['src']
+                            line = [year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                            print(line)
                 next_year = model_year.find('a').get_text().strip()
                 next_link = 'https://www.dodge.com' + model_year.find('a')['href']
-
-    def custome_parent(self, child):
-        if child.find('img'):
-            return child
-        return self.custome_parent(child.parent)
+                next_link_soup = BeautifulSoup(requests.get(url=next_link).content, 'html5lib')
+                li_links = next_link_soup.select('li.nav-section-link a')
+                for li_link in li_links:
+                    section = li_link.get_text().strip()
+                    link_url = 'https://www.dodge.com' + li_link['href']
+                    if link_url not in links:
+                        link_soup = BeautifulSoup(requests.get(url=link_url).content, 'html5lib')
+                        brands = link_soup.find_all('h4', {'class': 'title-header'})
+                        for brand in brands:
+                            title = brand.text.strip()
+                            description = brand.find_next('p').text.strip()
+                            image = 'https://www.dodge.com' + brand.find_previous('img')['src']
+                            line = [next_year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                            print(line)
+                        blurbs = link_soup.find_all(class_='blurb-title')
+                        for blurb in blurbs:
+                            title = blurb.text.strip()
+                            description = blurb.find_next(class_=re.compile('description'))
+                            if not blurb.find_next('img'):
+                                continue
+                            image = 'https://www.dodge.com' + blurb.find_next('img')['src']
+                            line = [next_year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                            print(line)
+                        typegraphies = link_soup.find_all('h3', {
+                            'class': 'section-header__title gcss-typography-brand-heading-3 dodge'})
+                        for typegraphy in typegraphies:
+                            title = typegraphy.text.strip()
+                            description = typegraphy.find_next('p').text.strip()
+                            image = 'https://www.dodge.com' + typegraphy.find_next('img')['src']
+                            line = [next_year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                            print(line)
+                        boxes = link_soup.find_all('h3', 'box-title')
+                        for box in boxes:
+                            title = box.text.strip()
+                            description = box.find_next('p').text.strip()
+                            image = 'https://www.dodge.com' + box.find_previous('img')['src']
+                            line = [next_year, 'Dodge', model, section, title, description, image]
+                            if '' in line:
+                                continue
+                            self.chevrolet.write_csv(lines=[line], filename='Dodge_2020.csv')
+                            print(line)
+            else:
+                print(link)
+                exit()
 
     def Jeep(self):
         initial_url = 'https://www.jeep.com/'
@@ -3037,21 +3125,856 @@ class Features_2020:
                     self.chevrolet.write_csv(lines=[line], filename='Chrysler_2020.csv')
 
     def Honda(self):
+        def find_parent_with_class(element):
+            children = element.findChildren()
+            for child in children:
+                if child.has_attr('class') and child['class'] == 'category-subslide-copy':
+                    return element
+            if element.parent is None:
+                return None
+            return element.parent
+
         request_url = 'https://automobiles.honda.com/Honda_Automobiles/SortVehicleCards/Json/%7BF5855B0D-D2CA-4837-A7CC-ECC9DBB80F1C%7D?sortDropDownDisplayXS=False&amp;sortDropDownDisplayS=False&amp;sortDropDownDisplayM=False&amp;sortDropDownDisplayL=True&amp;sortDropDownDisplayXL=True&amp;sortIsFlyout=False'
         vehicles = requests.get(url=request_url).json()['vehicles']
+        total_lines = []
         for vehicle in vehicles:
             vehicle_url = 'https://automobiles.honda.com' + vehicle['vehicleImageCTA']['url']
-            print(vehicle_url)
             vehicle_soup = BeautifulSoup(requests.get(url=vehicle_url).content, 'lxml')
             sticky_nav = vehicle_soup.select('.m_stickyNav .left-content')
             model = sticky_nav[0].find('div', {'class': 'title'}).text.strip()
+            year = sticky_nav[0].select('.years ul li')
+            print(vehicle_url)
+            if len(year) == 2:
+                previous_year = year[0].get_text().strip()
+                previous_link = 'https://automobiles.honda.com' + year[0].a['href']
+                previous_soup = BeautifulSoup(requests.get(url=previous_link).content, 'lxml')
+                titles_dom = previous_soup.select('[class*="head"]')
+                for title_dom in titles_dom:
+                    category_subslide = find_parent_with_class(title_dom)
+                    if category_subslide is None:
+                        continue
+                    if title_dom.find_previous(attrs={'class': 'blade-type'}):
+                        section = title_dom.find_previous(attrs={'class': 'blade-type'}).find_next(text=True).find_next().text.strip()
+                        title = title_dom.getText().strip()
+                        descriptions_dom = title_dom.find_all_next(text=True)
+                        for description_dom in descriptions_dom:
+                            if description_dom != '\n' and description_dom.encode('utf-8').decode('utf-8').strip() != title:
+                                description = description_dom.replace('\n', '').replace('\r', '').strip()
+                                break
+                        if self.custome_parent(title_dom).find('img').has_attr('src'):
+                            image = 'https://automobiles.honda.com' + self.custome_parent(title_dom).find('img')['src'].split('?')[0]
+                        elif self.custome_parent(title_dom).find('img').has_attr('srcset'):
+                            image = 'https://automobiles.honda.com' + self.custome_parent(title_dom).find('img')['srcset'].split('?')[0]
+                        line = [previous_year, 'Honda', model, section, title, description, image]
+                        if line in total_lines:
+                            continue
+                        total_lines.append(line)
+                        if '' in line or len(line[5]) < 20:
+                            continue
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Honda_2020.csv')
+                next_year = year[1].get_text().strip()
+                next_link = 'https://automobiles.honda.com' + year[1].a['href']
+                next_soup = BeautifulSoup(requests.get(url=next_link).content, 'lxml')
+                titles_dom = next_soup.select('[class*="head"]')
+                for title_dom in titles_dom:
+                    category_subslide = find_parent_with_class(title_dom)
+                    if category_subslide is None:
+                        continue
+                    if title_dom.find_previous(attrs={'class': 'blade-type'}):
+                        section = title_dom.find_previous(attrs={'class': 'blade-type'}).find_next(
+                            text=True).find_next().text.strip()
+                        title = title_dom.getText().strip()
+                        descriptions_dom = title_dom.find_all_next(text=True)
+                        for description_dom in descriptions_dom:
+                            if description_dom != '\n' and description_dom.encode('utf-8').decode(
+                                    'utf-8').strip() != title:
+                                description = description_dom.replace('\n', '').replace('\r', '').strip()
+                                break
+                        if self.custome_parent(title_dom).find('img').has_attr('src'):
+                            image = 'https://automobiles.honda.com' + \
+                                    self.custome_parent(title_dom).find('img')['src'].split('?')[0]
+                        elif self.custome_parent(title_dom).find('img').has_attr('srcset'):
+                            image = 'https://automobiles.honda.com' + \
+                                    self.custome_parent(title_dom).find('img')['srcset'].split('?')[0]
+                        line = [next_year, 'Honda', model, section, title, description, image]
+                        if line in total_lines:
+                            continue
+                        total_lines.append(line)
+                        if '' in line or len(line[5]) < 20:
+                            continue
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Honda_2020.csv')
+            else:
+                current_year = year[0].get_text().strip()
+                titles_dom = vehicle_soup.select('[class*="head"]')
+                for title_dom in titles_dom:
+                    category_subslide = find_parent_with_class(title_dom)
+                    if category_subslide is None:
+                        continue
+                    if title_dom.find_previous(attrs={'class': 'blade-type'}):
+                        section = title_dom.find_previous(attrs={'class': 'blade-type'}).find_next(
+                            text=True).find_next().text.strip()
+                        title = title_dom.getText().strip()
+                        descriptions_dom = title_dom.find_all_next(text=True)
+                        for description_dom in descriptions_dom:
+                            if description_dom != '\n' and description_dom.encode('utf-8').decode(
+                                    'utf-8').strip() != title:
+                                description = description_dom.replace('\n', '').replace('\r', '').strip()
+                                break
+                        if self.custome_parent(title_dom).find('img').has_attr('src'):
+                            image = 'https://automobiles.honda.com' + \
+                                    self.custome_parent(title_dom).find('img')['src'].split('?')[0]
+                        elif self.custome_parent(title_dom).find('img').has_attr('srcset'):
+                            image = 'https://automobiles.honda.com' + \
+                                    self.custome_parent(title_dom).find('img')['srcset'].split('?')[0]
+                        line = [current_year, 'Honda', model, section, title, description, image]
+                        if line in total_lines:
+                            continue
+                        total_lines.append(line)
+                        if '' in line or len(line[5]) < 20:
+                            continue
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Honda_2020.csv')
 
+    def Lexus(self):
+        initial_url = 'https://lexus.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('.category .stage')
+        for vehicle in vehicles:
+            model = vehicle.find(class_="model-name").text
+            year = vehicle.find(class_="model-year").text.split(' ')[1]
+            link = 'https://lexus.com' + vehicle.find('a')['href'] + '/features'
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            sections_dom = link_soup.select('ul.primary-links')[1].find_all('li', {'class': 'tertiary-nav-item'})
+            for section_dom in sections_dom:
+                section = section_dom.get_text().strip()
+                section_link = 'https://lexus.com' + section_dom.a['href']
+                section_link_soup = BeautifulSoup(requests.get(url=section_link).text, 'html5lib')
+                feature_items = section_link_soup.select('.feature-item')
+                for feature_item in feature_items:
+                    if feature_item.find('h2'):
+                        title = feature_item.find('h2').text.strip()
+                    else:
+                        title = feature_item.find(class_=re.compile('title')).get_text().strip()
+                    if feature_item.select(".description, .text, .paragraph"):
+                        description = feature_item.select(".description, .text, .paragraph")[0].text.strip()
+                    if not feature_item.find('img'):
+                        continue
+                    if feature_item.find('img').has_attr('data-original'):
+                        image = 'https://lexus.com' + feature_item.find('img')['data-original']
+                    elif feature_item.find('img').has_attr('data-large'):
+                        image = 'https://lexus.com' + feature_item.find('img')['data-large']
+                    elif feature_item.find('img').has_attr('src'):
+                        image = 'https://lexus.com' + feature_item.find('img')['src']
+                    else:
+                        print(image)
+                        exit()
+                    if image == 'https://lexus.com/assets/img/global/spacer.png':
+                        print(feature_item)
+                        exit()
+                    line = [year, 'Lexus', model, section, title, description, image]
+                    print(line)
+                    self.chevrolet.write_csv(lines=[line], filename='Lexus_2020.csv')
+
+    def Kia(self):
+        initial_html = """
+        <ul class="list_vehicles">
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/all-new-picanto.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_all_new_picanto1.png" alt="Picanto">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_picanto1_txt_ver2.png" class="txt" alt="Picanto" data-width="92" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_all_new_picanto1_upcoming_ver2.png" class="car" alt="Picanto">
+                                        </div>
+                                        <em class="name">Picanto</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/all-new-rio-4dr.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_all_new_rio_4door1.png" alt="Rio Sedan">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio_4door1_txt_ver2.png" class="txt" alt="Rio Sedan" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio_4door1_upcoming_ver2.png" class="car" alt="Rio Sedan">
+                                        </div>
+                                        <em class="name">Rio Sedan</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/rio.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_all_new_rio1.png" alt="Rio Hatchback">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio1_txt_ver2.png" class="txt" alt="Rio Hatchback" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio1_upcoming_ver2.png" class="car" alt="Rio Hatchback">
+                                        </div>
+                                        <em class="name">Rio Hatchback</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/cerato-forte.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_cerato1.png" alt="Cerato/Forte">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_cerato1_txt_ver2.png" class="txt" alt="Cerato/Forte upcoming" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_cerato1_upcoming_ver2.png" class="car" alt="Cerato/Forte upcoming">
+                                        </div>
+                                        <em class="name">Cerato/Forte</em>
+                                    </a>
+                                </li>
+
+
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_ceed1.png" alt="Ceed">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_ceed1_txt.png" class="txt" alt="Ceed upcoming2" data-width="94" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_ceed1_upcoming.png" class="car" alt="Ceed upcoming2">
+                                        </div>
+                                        <em class="name">Ceed</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/proceed.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_pro-ceed1.png" alt="ProCeed">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_pro-ceed1_txt.png" class="txt" alt="ProCeed upcoming2" data-width="142" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_pro-ceed1_upcoming.png" class="car" alt="ProCeed upcoming2">
+                                        </div>
+                                        <em class="name">ProCeed</em>
+                                    </a>
+                                </li>
+
+
+                                <!-- <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed.do">
+                                        <img src="/worldwide/images/vehicles/img_ceed1.png" alt="cee’d" />
+                                        <em class="name">cee’d</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed-3dr.do">
+                                        <img src="/worldwide/images/vehicles/img_pro-ceed1.png" alt="pro_cee’d" />
+                                        <em class="name">pro_cee’d</em>
+                                    </a>
+                                </li> -->
+
+                                <!-- <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed-sportswagon.do">
+                                        <img src="/worldwide/images/vehicles/img_ceed-sw-sp1.png" alt="cee’d Sportswagon" />
+                                        <em class="name">cee’d Sportswagon</em>
+                                    </a>
+                                </li> -->
+
+                                <li data-group="group2"> <!-- 20190403 group2로 수정 -->
+                                    <a href="/worldwide/vehicles/optima.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_optima1.png" alt="Optima">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_optima1_txt.png" class="txt" alt="Optima upcoming2" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_optima1_upcoming.png" class="car" alt="Optima upcoming2">
+                                        </div>
+                                        <em class="name">Optima</em>
+                                    </a>
+                                </li>
+
+                                <!-- <li data-group="group4">
+                                    <a href="/worldwide/vehicles/all-new-optima-hybrid.do">
+                                        <img src="/worldwide/images/vehicles/img_all_new_optima_hybrid1.png" alt="Optima Hybrid" />
+                                        <em class="name">Optima Hybrid</em>
+                                    </a>
+                                </li> -->
+                                <li data-group="group4"> <!-- 20190403 group4로 수정 -->
+                                    <a href="/worldwide/vehicles/optima-hybrid.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_optima_hybrid1.png" alt="Optima Hybrid">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_optima_hybrid1_txt.png" class="txt" alt="Optima Hybrid upcoming2" data-width="138" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_optima_hybrid_upcoming.png" class="car" alt="Optima Hybrid upcoming2">
+                                        </div>
+                                        <em class="name">Optima Hybrid</em>
+                                    </a>
+                                </li>
+
+
+
+                                <!--  <li data-group="group2">
+                                    <a href="/worldwide/vehicles/all-new-cadenza.do">
+                                        <img src="/worldwide/images/vehicles/img_all_new_cadenza1.png" alt="Cadenza" />
+                                        <em class="name">Cadenza</em>
+                                    </a>
+                                </li> -->
+                                <!-- s:20191217 -->
+                                <li data-group="group2" class="new">
+                                    <a href="/worldwide/vehicles/cadenza.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_cadenza.png" alt="Cadenza">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_cadenza_txt.png" class="txt" alt="Cadenza upcoming2" data-width="138" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_cadenza_upcoming.png" class="car" alt="Cadenza upcoming2">
+                                        </div>
+                                        <em class="name">Cadenza</em>
+                                    </a>
+                                </li>
+                                <!-- e:20191217 -->
+
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/stinger.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_Stinger1.png" alt="Stinger">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_stinger1_txt_ver2.png" class="txt" alt="Stinger upcoming" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_Stinger1_upcoming_ver2.png" class="car" alt="Stinger upcoming">
+                                        </div>
+                                        <em class="name">Stinger</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/k900.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_K900.png" alt="K900">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_K900_txt_ver2.png" class="txt" alt="K900" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_K900_upcoming_ver2.png" class="car" alt="K900">
+                                        </div>
+                                        <em class="name">K900</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/stonic.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_stonic1.png" alt="stonic">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_stonic1_txt_ver2.png" class="txt" alt="stonic" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_stonic1_upcoming_ver2.png" class="car" alt="stonic">
+                                        </div>
+                                        <em class="name">Stonic</em>
+                                    </a>
+                                </li>
+                                <!--  <li data-group="group4">
+                                    <a href="/worldwide/vehicles/niro.do">
+                                        <img src="/worldwide/images/vehicles/img_niro1.png" alt="Niro" />
+                                        <em class="name">Niro</em>
+                                    </a>
+                                </li> -->
+                                
+                                <!-- s:20191118 eidt & add -->
+                  <li data-group="group4" class="new">
+                     <a href="/worldwide/vehicles/niro.do" class="upcoming2" style="background:none;">
+                     <img src="/worldwide/images/vehicles/img_niro_201911.png" alt="Niro">
+                     <div class="animate" style="display: none; opacity: 0; width: 0px; left: 50%;">
+                      <img src="/worldwide/images/vehicles/img_niro_201911_txt.png" class="txt" alt="Niro" data-width="138" data-height="47" style="top: 56px; left: 26.5px; width: 138px;">
+                      <img src="/worldwide/images/vehicles/img_niro_201911_2.png" class="car" alt="Niro" style="display: none;">
+                     </div>
+                     <em class="name">Niro<br>(Hybrid, Plug-in Hybrid)</em>
+                     </a>
+                  </li>
+                  <li data-group="group4" class="new">
+                     <a href="/worldwide/vehicles/e-niro.do" class="upcoming2" style="background:none;">
+                     <img src="/worldwide/images/vehicles/img_e-niro_201911.png" alt="Niro">
+                     <div class="animate" style="display: none; opacity: 0; width: 0px; left: 50%;">
+                      <img src="/worldwide/images/vehicles/img_e-niro_201911_txt.png" class="txt" alt="e-Niro" data-width="138" data-height="47" style="top: 56px; left: 26.5px; width: 138px;">
+                      <img src="/worldwide/images/vehicles/img_e-niro_201911_2.png" class="car" alt="e-Niro" style="display: none;">
+                     </div>
+                     <em class="name">e-Niro</em>
+                     </a>
+                  </li>
+                  <!-- e:20191118 -->
+                                
+
+                <!-- 20190326 new soul -->
+                <li data-group="group3" class="new">
+                    <a href="/worldwide/vehicles/soul.do" class="upcoming2" style="background:none;">
+                        <img src="/worldwide/images/vehicles/img_soul_201903_1.png" alt="Soul">
+                        <div class="animate">
+                            <img src="/worldwide/images/vehicles/img_soul_201903_txt.png" class="txt" alt="Soul" data-width="138" data-height="47">
+                            <img src="/worldwide/images/vehicles/img_soul_201903_2.png" class="car" alt="Soul">
+                        </div>
+                        <em class="name">Soul</em>
+                    </a>
+                </li>
+                <!-- //20190326 -->
+
+                <!-- 2019026 기존 soul 메뉴 삭제
+                                <li data-group="group3" class="new">
+                                    <a href="/worldwide/vehicles/all-new-soul.do" class="upcoming2">
+                                        <img src="/worldwide/images/vehicles/img_all_new_soul1.png" alt="Soul">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_soul1_txt.png" class="txt" alt="Soul upcoming" data-width="138" data-height="47" />
+                                            <img src="/worldwide/images/vehicles/img_all_new_soul_upcoming.png" class="car" alt="Soul upcoming" />
+                                        </div>
+                                        <em class="name">Soul</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/soul.do">
+                                        <img src="/worldwide/images/vehicles/img_soul1.png" alt="Soul" />
+                                        <em class="name">Soul</em>
+                                    </a>
+                                </li>
+                -->
+
+                                
+                                
+                                <!-- 20190802 add -->
+                                <li data-group="group4" class="new">
+                                  <a href="/worldwide/vehicles/e-soul.do" class="upcoming2" style="background:none;">
+                                    <img src="/worldwide/images/vehicles/img_soul1_ev.png" alt="e-Soul">
+                                    <div class="animate">
+                                      <img src="/worldwide/images/vehicles/img_soul1_txt.png" class="txt" alt="e-Soul" data-width="138" data-height="47">
+                                      <img src="/worldwide/images/vehicles/img_soul1_upcoming.png" class="car" alt="e-Soul">
+                                    </div>
+                                    <em class="name">e-Soul</em>
+                                  </a>
+                                </li>
+                                <!-- // 20190802 add -->
+                                
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/carens-rondo.do">
+                                        <img src="/worldwide/images/vehicles/img_carens-rondo1.png" alt="Carens/Rondo">
+                                        <em class="name">Carens/Rondo</em>
+                                    </a>
+                                </li>
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/carnival.do">
+                                        <img src="/worldwide/images/vehicles/img_carnival1.png" alt="Grand Carnival/Sedona">
+                                        <em class="name">Grand Carnival/Sedona</em>
+                                    </a>
+                                </li>
+
+                                <!--
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/all-new-sportage.do">
+                                        <img src="/worldwide/images/vehicles/img_new_sportage1.png" alt="Sportage" />
+                                        <em class="name">Sportage</em>
+                                    </a>
+                                </li>
+                                -->
+                                <li data-group="group3" class="new">
+                                    <a href="/worldwide/vehicles/sportage.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_sportage1.png" alt="Sportage">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_sportage1_txt.png" class="txt" alt="Sportage" data-width="138" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_sportage1_upcoming.png" class="car" alt="Sportage">
+                                        </div>
+                                        <em class="name">Sportage</em>
+                                    </a>
+                                </li>
+
+
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/sorento.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_sorento1.png" alt="Sorento">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_sorento1_txt_ver2.png" class="txt" alt="Sorento" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_sorento1_upcoming_ver2.png" class="car" alt="Sorento">
+                                        </div>
+                                        <em class="name">Sorento</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/mohave.do">
+                                        <img src="/worldwide/images/vehicles/img_mohave1.png" alt="Mohave">
+                                        <em class="name">Mohave</em>
+                                    </a>
+                                </li>
+                                <!--190514 add-->
+                                <li data-group="group3" class="new">
+                                  <a href="/worldwide/vehicles/telluride.do">
+                                    <img src="/worldwide/images/vehicles/img_telluride1.png" alt="Telluride">
+                                    <em class="name">Telluride</em>
+                                  </a>
+                                </li>
+                                <!--//190514 add-->
+                                 <!-- s:20190603 -->
+                                <!--  
+                                <li data-group="group3" class="new">
+                                  <a href="/worldwide/vehicles/unveiling-seltos.do" class="upcoming2">
+                                    <img src="/worldwide/images/vehicles/img_seltos.png" width="160" alt="Seltos">
+                                    <em class="name">Seltos</em>
+                                  </a>
+                                </li>
+                                -->
+                                 
+                                
+                                  <!-- s:20191202 edit -->
+                                   
+                                <li data-group="group3" class="new">
+                                    <a href="/worldwide/vehicles/seltos.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_seltos_19120.png" alt="Seltos">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_seltos_txt.png" class="txt" alt="Seltos" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_seltos_191202_2.png" class="car" alt="Seltos">
+                                        </div>
+                                        <em class="name">Seltos</em>
+                                    </a>
+                                </li>
+                                
+                                 <!-- e:20191202 edit -->
+                                 
+                                <!-- e:20190603 -->
+                                <li data-group="group5">
+                                    <a href="/worldwide/vehicles/k2500-k2700-k3000s-k4000g.do">
+                                        <img src="/worldwide/images/vehicles/img_k2700-k2500-k4000g1.png" alt="K2500/K2700/K3000S/K4000G">
+                                        <em class="name">K2500/K2700/<br>K3000S/K4000G</em>
+                                    </a>
+                                </li>
+                            </ul>"""
+        initial_soup = BeautifulSoup(initial_html, 'html5lib')
+        vehicles = initial_soup.select('ul.list_vehicles li')
+        for vehicle in vehicles:
+            model = vehicle.get_text().strip()
+            vehicle_link = 'https://www.kia.com' + vehicle.a['href']
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            special_bar = vehicle_link_soup.find(attrs={'class': 'evt_specialMn'})
+            if special_bar:
+                print(vehicle_link)
+                content = vehicle_link_soup.find(id="content")
+                content_divs = content.find_all('div', recursive=False)
+                for content_div in content_divs:
+                    section = content_div['class'][0]
+                    cents = content_div.find_all('[class*="cont"]')
+                    if cents:
+                        for cont in cents:
+                            if cont.has_attr('class') and 'cont' in content_div['class']:
+                                title = content_div.find(class_='txt').get_text().strip()
+                                description = content_div.select('[class*="sTxt"]')[0].get_text().strip()
+                                image = 'https://www.kia.com' + content_div.find(class_='photo').img['src']
+                                line = ['2020', 'Kia', model, section, title, description, image]
+                                print(line)
+                    else:
+                        for cent in cents:
+                            print(cent)
+                            exit()
+                            if cent.find(class_='txt'):
+                                title = content_div.find(class_='txt').get_text().strip()
+                            else:
+                                title = ''
+                            if cent.find_all('[class*="sTxt"]'):
+                                description = content_div.select('[class*="sTxt"]')[0].get_text().strip()
+                            else:
+                                description = ''
+                            if cent.find('img'):
+                                image = 'https://www.kia.com' + content_div.find('img')['src']
+                            else:
+                                image = ''
+                            line = ['2020', 'Kia', model, section, title, description, image]
+                            print(line)
+            else:
+                items = vehicle_link_soup.select('.slider_contain .item')
+                print(vehicle_link)
+                for item in items:
+                    if item.find_previous(class_='tit_section'):
+                        section = item.find_previous(class_='tit_section').getText().strip()
+                    else:
+                        continue
+                        # section = item.find_previous(class_='tit').getText().strip()
+                    title = item.select('.description')[0].find(class_='tit').get_text().strip()
+                    if item.select('.description')[0].find(class_='desc'):
+                        description = item.select('.description')[0].find(class_='desc').get_text().strip()
+                    else:
+                        description = ''
+                    image = 'https://www.kia.com' + item.find('img')['src']
+                    line = ['2020', 'Kia', model, section, title, description, image]
+                    print(line)
+                    self.chevrolet.write_csv(lines=[line], filename='Kia_2020.csv')
+
+    def Hyundai(self):
+        initial_url = 'https://www.hyundaiusa.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('#vehicles .model')
+        for vehicle in vehicles:
+            if vehicle.find('div', {'class': 'model-name'}):
+                year_model = vehicle.find('div', {'class': 'model-name'}).get_text()
+                year = year_model[:4]
+                model = year_model[4:].strip()
+                model_link = 'https://www.hyundaiusa.com' + vehicle.a['href']
+                if model_link == 'https://www.hyundaiusa.com/veloster-n/index.aspx':
+                    model_link = 'https://www.hyundaiusa.com/veloster/index.aspx'
+                model_link_soup = BeautifulSoup(requests.get(url=model_link).content, 'html5lib')
+                copies = model_link_soup.find_all('div', attrs={'class': 'copy'})
+                print(model_link)
+                tmp_title = ''
+                for copy in copies:
+                    if not copy.find_parent('section'):
+                        continue
+                    if copy.parent.find('div', {'class': 'subhead'}):
+                        section = copy.find_previous('div', {'class': 'headline'}).text.strip()
+                        title = copy.find_previous('div', {'class': 'subhead'}).text.strip()
+                        if tmp_title == title:
+                            continue
+                        description = copy.text.strip()
+                    else:
+                        if not copy.find_parent('section').find('div', {'class': 'headline'}):
+                            continue
+                        section = copy.find_parent('section').find('div', {'class': 'headline'}).text.strip()
+                        title = copy.find_previous('div', {'class': 'headline'}).text.strip()
+                        if title == tmp_title:
+                            continue
+                        description = copy.text.strip()
+                    if self.custome_parent(copy).find('img').has_attr('src'):
+                        image = 'https://www.hyundaiusa.com' + self.custome_parent(copy).find('img')['src']
+                    elif self.custome_parent(copy).find('img').has_attr('data-lazy'):
+                        image = self.custome_parent(copy).find('img')['data-lazy']
+                    else:
+                        print(self.custome_parent(copy).find('img'))
+                        exit()
+                    tmp_title = title
+                    line = [year, 'Hyundai', model, section, title, description, image]
+                    if '' in line:
+                        continue
+                    print(line)
+                    self.chevrolet.write_csv(lines=[line], filename='Hyundai_2020.csv')
+
+    def Infiniti(self):
+        initial_url = 'https://www.infinitiusa.com/vehicles/new-vehicles.html'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser')
+        vehicles = initial_soup.find_all('h3', {'class': 'car-title'})
+        for vehicle in vehicles:
+            year = vehicle.text[:5].strip()
+            model = vehicle.text[5:].strip()
+            link = 'https://www.infinitiusa.com' + vehicle.a['href'].replace('.html', '/features.html')
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            content_group = link_soup.find_all('div', class_='content-group')
+            if link == 'https://www.infinitiusa.com/vehicles/crossovers/qx60/features.html':
+                soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+                centers = soup.select('[class^=c_00]')
+                for center in centers:
+                    if not center.find('div', {'class': 'heading-group'}):
+                        continue
+                    title = center.find('div', {'class': 'heading-group'}).text.strip()
+                    if not center.select('div p'):
+                        continue
+                    descriptions_dom = center.find_all('p')
+                    for description_dom in descriptions_dom:
+                        if not description_dom.has_attr('class'):
+                            description = description_dom.text.strip()
+                    image = 'https://www.infiniti.com' + center.find_previous('img')['src']
+                    section = center.find_previous('div', {'class': 'c_004'}).text.strip()
+                    line = [year, 'Infiniti', model, section, title.replace('\n', '').replace('  ', ''), description, image]
+                    print(line)
+                    self.chevrolet.write_csv(lines=[line], filename='Infiniti_2020.csv')
+                continue
+            if content_group:
+                print(link)
+                if link == 'https://www.infinitiusa.com/vehicles/coupes/q60/features.html':
+                    lines = [
+                        ['2020', 'Infiniti', 'Q60', 'PERFORMANCE', 'TURBO ENGINES ACCELERATE YOUR POTENTIAL AND PERFORMANCE', 'This is power through innovation, where the forces of advanced technology blow past limits. Two turbocharged V6 powertrain variants culminate in jaw-dropping performance.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/2020-infiniti-q60-coupe-engine.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'PERFORMANCE', 'INVENTIVE IN MOTION IT’S NOT JUST A CAR, IT’S AN EXPERIENCE', 'A 3.0-liter V6 twin-turbo engine that can put up to 300 horsepower on the road. INFINITI cutting-edge technologies put you in position to manage your performance, with more power when you need it most.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/2020-infiniti-q60-red-sport-400-luxury-coupe.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'PERFORMANCE', '300-HP 3.0-LITER V6 TWIN-TURBO ENGINE', 'Tap into 300 horsepower and 295 pound-feet of torque, quicker than you ever imagined. A variant of the V6, it propels you beyond measure, courtesy of a lightweight aluminum engine, friction-reducing technologies, plus cooling and valve timing systems.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/infiniti-q60-turbo-engine.jpg.ximg.l_6_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'PERFORMANCE', '400-HP 3.0-LITER V6 TWIN-TURBO ENGINE', 'Standard on the Q60 RED SPORT 400, the V6 twin-turbo’s 350 pound-feet of torque builds quickly and power pours out like an endless flood. Acceleration is instant and feels limitless. Direct Injection Gasoline, water-cooled air charging, a turbo speed sensor and advanced turbine blade design make for quicker response and a higher peak.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/infiniti-q60-turbo-engine.jpg.ximg.l_6_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'PERFORMANCE', 'DYNAMIC DIGITAL SUSPENSION HANDLE WITH INSTANT ADAPTABILITY', 'The Q60’s available Dynamic Digital Suspension can adjust continually to corners and road imperfections, striking an ideal balance between performance and cushioning for something revolutionary. Drivers can also take control with the flick of a switch, manually switching from the comfort-bias to a sportier ride, highly responsive and personal to heighten your driving experience', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/2020-infiniti-q60-coupe-dynamic-digital-suspension.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'PERFORMANCE', 'DIRECT ADAPTIVE STEERING® IT PUTS THE FUTURE OF DRIVING IN YOUR HANDS', 'After many years of research and development, Q60’s optional Second-generation Direct Adaptive Steering® is here to revolutionize how we drive. This system digitally and instantaneously transmits your steering input directly to the wheels. Its digital processing power lets you steer quicker and smoother than you ever imagined. When you are driving on rough or uneven roads, the system is constantly, automatically making subtle adjustments to give you an increased feeling of stability, while decreasing vibration through the steering wheel.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/2020-infiniti-q60-digital-dynamic-suspension.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'PERFORMANCE', 'DRIVE MODE SELECTOR CHOOSE YOUR DRIVE', 'INFINITI Drive Mode Selector takes performance and control to a more refined level. Select between Standard, Snow, available ECO, Sport, available Sport+, and Personal modes. Then further tailor your drive by tuning steering, engine and suspension inputs. The result is one that suits the moment and more importantly, can be personalized exactly to your liking. Expand your experience beyond road conditions and preset factory settings.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/infiniti-q60-coupe-drive-mode-selector.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'DESIGN', 'UNIQUE DESIGN DESIGN THAT KNOWS NO BOUNDS', "Daring curves, deep creases, and flowing lines intensify Q60's low, wide, powerful stance. Signature elements like eye-inspired headlights and a double-arch grille make it unmistakably INFINITI. Progressive and modern, yet dynamic and moving, this is a new kind of sports coupe.", 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/red-2020-infiniti-q60-coupe-grille.jpg.ximg.l_full_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'DESIGN', 'WIDE POWERFUL STANCE AN ELEVATED DESIGN EXPRESSION', 'The dynamic proportions make a purpose-built statement. Low enough to stick to the ground. Wide enough to deliver greater stability. With a low hood height for an unobstructed view of the road so you truly feel connected to everything around you.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/design/2020-infiniti-q60-coupe-dynamic-sunstone-red.jpg.ximg.l_4_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'DESIGN', 'EXPRESSIVE ILLUMINATION SEE FARTHER', 'Eye-inspired LED headlights give a provocative stare that can be seen from both the front and side. The optional Adaptive Front lighting System turns the headlights as you turn the steering wheel, improving visibility at intersections and around curves.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/performance/2020-infiniti-q60-coupe-headlamps.jpg.ximg.l_4_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'DESIGN', 'ZERO LIFT FRONT AND REAR AERODYNAMICS STABILITY AT HIGH SPEEDS', "Q60 features a front and rear “Zero Lift” aerodynamic design that helps keep the vehicle stable at high speeds, helping to mitigate unforeseen aerodynamic effects to the vehicle's path. It also helps keep the vehicle more stable in cross-wind situations.", 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/design/infiniti-q60-coupe-aerodynamic-illustration.jpg.ximg.l_4_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'The Elements of Design Ultramodern Style', 'Dramatic Graphite Leatherette is sharply contrasted with a Brushed Aluminum trim. Shown for 2020 Q60 3.0t PURE/PURE AWD.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-graphite-leatherette-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'The Elements of Design ULTRAMODERN STYLE', 'Dramatic Graphite Leatherette is sharply contrasted with a Brushed Aluminum trim. Shown for 2020 Q60 3.0t LUXE/LUXE AWD.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-graphite-leatherette-aluminum-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'THE ELEMENTS OF DESIGN TRADITIONAL CRAFTSMANSHIP, MODERN MATERIALS', 'Dramatic Graphite Semi-Aniline Leather-appointed seating is sharply contrasted with a Brushed Aluminum trim. Shown for 2020 Q60 3.0t LUXE/LUXE AWD. **Requires additional package on all models', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-semi-aniline-leather-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'The Elements of Design A SUBTLE PAIRING', 'The muted elegance of Stone Leatherette is accented by Brushed Aluminum trim. This interior design is available on: Q60 3.0t LUXE and Q60 3.0t LUXE AWD.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-stone-leatherette-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'The Elements of Design A TAILORED APPROACH', 'Our striking Gallery White Semi-Aniline Leather-appointed seating is complemented by Brushed Aluminum trim throughout. This interior design is available on: Q60 3.0t LUXE and Q60 3.0t LUXE AWD. **Requires additional package on all models', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-white-semi-aniline-leather-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'The Elements of Design Sleek and Contemporary', 'Dramatic Graphite Semi-Aniline Leather-appointed seating is sharply contrasted with Carbon Fiber trim. Shown for 2020 Q60 RED SPORT 400/RED SPORT 400 AWD. **Requires additional package on all models', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-graphite-semi-aniline-leather-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'The Elements of Design A TAILORED APPROACH', 'The distinctive Gallery White Semi-Aniline Leather-appointed seating and Black Carbon Fiber trim combine for a crisp, clean interior style. This interior design combination is exclusive to: Q60 RED SPORT 400 and Q60 RED SPORT 400 AWD. **Requires additional package on all models', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-white-leather-red-accent-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'The Elements of Design A BOLD CHOICE', 'Vivid Monaco Red Semi-Aniline Leather-appointed seating is matched with Black Carbon Fiber trim for a contemporary interior style. This red sport interior design is exclusive to: Q60 RED SPORT 400 and Q60 RED SPORT 400 AWD. **Requires additional package on all models', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-monaco-red-leather-interior.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'Matchless Materials A Body Of Art Crafted Expressly For You', 'Tailored to complement the human form, the cabin celebrates the driver with bold thinking and fine modern materials. The moment you enter, you will understand what true craftsmanship is. You can choose between available accents like Brushed Aluminum trim or Black Carbon Fiber trim.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-q60-interior-leather-seats-cup-holders.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'UNIQUE STITCHING Tailored And Accented', 'Craftsmanship is obvious with tighter stitching and more dynamic free-flowing shapes.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-q60-interior-door-panel-red-stitching-window-controls.jpg.ximg.l_4_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'SPORT SEAT DESIGN Exquisite Comfort', "Crafted to blend comfort with science, the design of the driver's seat allows you to perform at a higher level. Feel the sport-inspired difference. Deep bolsters and an integrated headrest hold you securely in place, while spinal support research led to a luxuriously comfortable design that can help reduce fatigue on long drives.", 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/2020-infiniti-q60-coupe-interior-monaco-red-leather.jpg.ximg.l_4_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'SPORT STEERING WHEEL Natural Grip', 'Your hands move in unique ways and a steering wheel should reflect that. This one does. Sport-inspired thumb grips and paddle shifters are just the right shape for performance driving.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/infiniti-q60-red-sport-400-steering-wheel.jpg.jpg.ximg.l_4_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'INTERIOR', 'Bose® Performance Series Audio You Can Hear It Here First', 'Bose® Performance Series Audio System includes 13 speakers, Advanced Staging Technology, Centerpoint® 2.0 Surround, AudioPilot® 2.0 Noise Compensation, multiple 10-inch and 6 x 9-inch woofers and a lightweight silk dome tweeter. This system features genuine aluminum speaker grilles that offer a touch of style and craftsmanship to the interior. You’ll experience true concert-like sound through speakers that create a wider soundstage.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/interior/infiniti-q60-coupe-bose-audio.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'APPLE CARPLAY®', 'Apple CarPlay® is the safer, smarter way to enjoy the things you love on your compatible iPhone while driving. Access Apple Music, Apple Maps, make calls, send and receive messages – all hands-free. Just plug in your iPhone and go.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/technology/2020-infiniti-q60-interior-intouch-apple-carplay.jpg.ximg.l_full_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'PREDICTIVE FORWARD COLLISION WARNING MONITOR YOUR SURROUNDINGS', "Predictive Forward Collision Warning can alert the driver of risks that may be obscured from the driver's forward field-of-view. It senses the relative velocity and distance of a vehicle traveling in front of the car right ahead.", 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/technology/infiniti-q60-predictive-forward-collision-warning.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'LANE DEPARTURE PREVENTION AND ACTIVE LANE CONTROL MAINTAIN YOUR LANE', 'Available Lane Departure Warning and Lane Departure Prevention systems can help warn the driver if they start to drift out of their lane and can even intervene if necessary. Active Lane Control monitors lane markers and evaluates the road conditions, while making fine adjustments to your steering.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/technology/infiniti-q60-lane-departure-prevention-active-lane-control.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'AROUND VIEW® MONITOR WITH MOVING OBJECT DETECTION HEIGHTENED AWARENESS', "The available Around View® Monitor delivers advanced yet intuitive technology, helping to make parking easier. Four cameras positioned around the vehicle give you a virtual 360° bird's-eye view on your display. This INFINITI system is enhanced with Moving Object Detection — alerting you to moving objects detected within the display image. Offering a new perspective of the world around you, your INFINITI helps you navigate even the tightest spaces.", 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/technology/infiniti-q60-around-view-monitor.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'BLIND SPOT WARNING AND BLIND SPOT INTERVENTION® SAFETY BEYOND WHAT YOU SEE', 'INFINITI’s available Blind Spot Warning System can help alert the driver to vehicles detected in the blind spot area. An indicator light illuminates if the presence of another vehicle is detected in the blind spot area. If the driver engages the turn signal, the indicator flashes and an audible warning sounds. And with the available Blind Spot Intervention®, if your Q60 begins to merge into a lane with another vehicle, the system will automatically help keep you in your lane.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/technology/infiniti-q60-blind-spot-warning-intervention.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'OWNER BENEFITS', 'TOTAL OWNERSHIP EXPERIENCE® COMMITTED TO YOU', 'At INFINITI, we are committed to making every aspect of ownership rewarding. We honor this commitment with personalized service that anticipates, recognizes, and understands your individual needs. We stand behind it with a comprehensive program of premium services and coverage to help ensure your satisfaction.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/owner-benefits/2020-infiniti-q60-red-sport-coupe-dynamic-sunstone-red.jpg.ximg.l_full_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'PREMIUM SERVICES COMPREHENSIVE SUPPORT', 'A defining quality of the INFINITI Total Ownership Experience® is the way we support you with premium services:', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/owner-benefits/2020-infiniti-q60-exterior-driver-side.jpg.ximg.l_12_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'FINANCIAL FLEXIBILITY CONVENIENT, CUSTOM PLANS', 'A commitment to meeting all of your personal needs is never more evident than with INFINITI Financial Services. INFINITI Financial Services offers creative lease and purchase options with convenient payment plans that are tailored to your needs. Visit the Financing section for more detailed information.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/owner-benefits/2020-infiniti-q60-interior-graphite-leather-wrapped-steering-wheel.jpg.ximg.l_6_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'HIGH PERFORMANCE IN A CREDIT CARD', 'Apply for an INFINITI® Visa® Card today.', 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Owner%20Benefits/infiniti-owner-benefits-visa-credit-card.jpg.ximg.l_6_m.smart.jpg'],
+                        ['2020', 'Infiniti', 'Q60', 'TECHNOLOGY', 'INFINITI WARRANTY PROTECTION AN EXTRA MEASURE OF REASSURANCE', "Every new INFINITI comes with the peace of mind of the INFINITI New Vehicle Limited Warranty, including 6-year/70,000-mile powertrain and 4-year/60,000-mile (whichever occurs first) basic coverage. Or purchase the INFINITI Elite Extended Protection Plan for additional protection for covered components for up to 8 years or 120,000 miles and extends your 4-year Roadside Assistance. Visit the Ownership section for more detailed warranty information. For complete information concerning coverage, conditions and exclusions, see your INFINITI retailer and read the actual New Vehicle Limited Warranty booklet.", 'https://www.infinitiusa.com/content/dam/Infiniti/US/vehicles/Q60/MY20/features/owner-benefits/2020-infiniti-q60-red-sport-400-exterior.jpg.ximg.l_12_m.smart.jpg'],
+                    ]
+                    self.chevrolet.write_csv(lines=lines, filename='Infiniti_2020.csv')
+                for content in content_group:
+                    try:
+                        title = content.find_all('p')[1].b.get_text().strip()
+                        content.find_all('p')[1].b.decompose()
+                        description = content.find_all('p')[1].get_text().strip()
+                        image = 'https://www.infinitiusa.com' + content.find_previous('picture').img['src']
+                        section = content.find_previous('h2', {'class': 'heading'}).text.strip()
+                        line = [year, 'Infiniti', section, title, description, image]
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Infiniti_2020.csv')
+                    except:
+                        continue
+            else:
+                print(link)
+                heli_sections = link_soup.find_all('div', class_='heliostext section')
+                for heli_section in heli_sections:
+                    if not heli_section.find(class_='heading-group'):
+                        continue
+                    title = heli_section.find(class_='heading-group').get_text().strip()
+                    heli_section.find(class_='heading-group').decompose()
+                    if heli_section.find('ul'):
+                        heli_section.find('ul').decompose()
+                    description = heli_section.text.strip()
+                    image = 'https://www.infinitiusa.com' + heli_section.find_previous('picture').img['src']
+                    section = heli_section.find_previous('div', {'class': 'c_004'}).text.strip()
+                    line = [year, 'Infiniti', model, section.replace('\n', '').replace('  ', ''), title.replace('\n', '').replace('  ', ''), description.strip(), image]
+                    print(line)
+                    self.chevrolet.write_csv(lines=[line], filename='Infiniti_2020.csv')
+
+    def Ford(self):
+        initial_url = 'https://www.ford.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('.tertiary_menu.nav.navbar-nav.vehicles > li')
+        for i in range(len(vehicles)//2):
+            vehicle = vehicles[i]
+            year = vehicle.find('span', class_='year').text[:4].strip()
+            model = vehicle.find('span', class_='year').text[4:].strip()
+            link = 'https://www.ford.com' + vehicle.a['href'].strip()
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            if link_soup.select('ul.dropdown.subnav.subnav-wrapper li:nth-child(3) a'):
+                feature_link = 'https://www.ford.com' + link_soup.select('ul.dropdown.subnav.subnav-wrapper li:nth-child(3) a')[0]['href']
+                feature_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                feature_titles = feature_soup.select('.featuresTile.fi-startcard > a')
+                for feature_title in feature_titles:
+                    section = feature_title.find(class_='fi-category-name').text.strip()
+                    feature_url = 'https://www.ford.com' + feature_title['href']
+                    feature_url_soup = BeautifulSoup(requests.get(url=feature_url).content, 'html5lib')
+                    brands = feature_url_soup.select('[class*="fgx-brand-exlt-h2"]')
+                    print(feature_url)
+                    for brand in brands:
+                        title = brand.text.strip()
+                        description = brand.find_next('span', class_='description').text.strip()
+                        image = 'https://www.ford.com' + self.custome_parent(brand.parent).find('img')['src']
+                        line = [year, 'Ford', model, section, title, description, image]
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Ford_2020.csv')
+                    add_brands = feature_url_soup.select('[class*="fgx-brand-lt-h4"]')
+                    for add_brand in add_brands:
+                        title = add_brand.text.strip()
+                        description = brand.find_next('span', class_='description').text.strip()
+                        image = 'https://www.ford.com' + self.custome_parent(brand.parent).find('img')['src']
+                        line = [year, 'Ford', model, section, title, description, image]
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Ford_2020.csv')
+
+    def Cadillac(self):
+        def find_parent_under_body(ele):
+            if ele.parent.name == 'body':
+                return ele
+            return ele.parent
+
+        links = ['http://www.cadillac.com/suvs/xt4', 'http://www.cadillac.com/suvs/xt5', 'http://www.cadillac.com/suvs/xt6', 'http://www.cadillac.com/suvs/escalade', 'http://www.cadillac.com/future-vehicles/escalade-suv', 'http://www.cadillac.com/sedans/ct4', 'https://www.cadillac.com/sedans/ct4#ct4-v', 'http://www.cadillac.com/sedans/ct5', 'https://www.cadillac.com/sedans/ct5#ct5-v', 'http://www.cadillac.com/sedans/cts-sedan', 'http://www.cadillac.com/sedans/xts-sedan', 'http://www.cadillac.com/sedans/ct6', 'http://www.cadillac.com/sedans/ct6-v', 'http://www.cadillac.com/suvs/xt4', 'http://www.cadillac.com/suvs/xt5', 'http://www.cadillac.com/suvs/xt6', 'http://www.cadillac.com/suvs/escalade', 'http://www.cadillac.com/future-vehicles/escalade-suv', 'http://www.cadillac.com/sedans/ct4', 'https://www.cadillac.com/sedans/ct4#ct4-v', 'http://www.cadillac.com/sedans/ct5', 'https://www.cadillac.com/sedans/ct5#ct5-v', 'http://www.cadillac.com/sedans/cts-sedan', 'http://www.cadillac.com/sedans/xts-sedan', 'http://www.cadillac.com/sedans/ct6', 'http://www.cadillac.com/sedans/ct6-v', 'https://www.cadillac.com/sedans/ct4#ct4-v', 'https://www.cadillac.com/sedans/ct5#ct5-v', 'http://www.cadillac.com/sedans/ct6-v']
+        links = ['http://www.cadillac.com/sedans/ct4']
+        for link in links:
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            model = link_soup.select('#nav_anchor > span')[0].text.strip()
+            year_toggle_lis = link_soup.select('.q-year-toggle-list li')
+            if len(year_toggle_lis) == 2:
+                for year_toggle_li in year_toggle_lis:
+                    year = year_toggle_li.text.strip()
+                    year_link = 'https://www.cadillac.com' + year_toggle_li.a['href']
+                    year_link_soup = BeautifulSoup(requests.get(url=year_link).content, 'html5lib')
+                    if year_link_soup.find_all('div', {'class': 'q-content content active-override'}) and 'preceding-year' not in year_link:
+                        overrides = year_link_soup.find_all('div', {'class': 'q-content content active-override'})
+                        print(year_link, '---------------------------------------------------')
+                        for override in overrides:
+                            section = override.find('span', {'class': 'q-headline-text q-button-text'}).text.strip()
+                            titles_desc = override.select('.row.q-gridbuilder.grid-bg-color-one')
+                            for title_desc in titles_desc:
+                                ttitle_desc = title_desc.find_all('div', recursive=False)
+                                for t_desc in ttitle_desc:
+                                    if not t_desc.picture:
+                                        continue
+                                    image = 'https://www.cadillac.com' + t_desc.picture.img['src']
+                                    if len(t_desc.select('.q-margin-base .q-text.q-body1')) < 2:
+                                        continue
+                                    title = t_desc.select('.q-margin-base .q-text.q-body1')[0].text.strip()
+                                    description = t_desc.select('.q-margin-base .q-text.q-body1')[1].text.strip()
+                                    if len(title) < 3:
+                                        continue
+                                    line = [year, 'Cadillac', model, section, title, description, image]
+                                    print(line)
+                                    self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                    else:
+                        previous_year = year_toggle_lis[1].text.strip()
+                        previous_link = 'https://www.cadillac.com' + year_toggle_lis[1].a['href']
+                        year_link_soup = BeautifulSoup(requests.get(url=previous_link).content, 'html5lib')
+                        feature_link = 'https://www.cadillac.com' + year_link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']
+                        print(feature_link, '==========================')
+                        feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                        separators = feature_link_soup.select('.q-content.content.active-override')
+                        for separator in separators:
+                            if separator.find(class_='q-headline1').style:
+                                separator.find(class_='q-headline1').style.decompose()
+                            title = separator.find(class_='q-headline1').text.strip()
+                            description = separator.find(class_='q-text q-body1').text.strip()
+                            image = 'https://www.cadillac.com' + separator.find('picture').img['src']
+                            section = find_parent_under_body(separator).find_previous('div', {'class': 'q-margin-base q-headline'}).text.strip()
+                            if len(title) < 3:
+                                continue
+                            line = [previous_year, 'Cadillac', model, section, title, description, image]
+                            print(line)
+                            self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                        reference_partial = feature_link_soup.find('div', {'class': 'q-margin-base q-reference-partial'})
+                        if reference_partial:
+                            titles_dom = reference_partial.find_all('div', {'class': 'q-margin-base q-headline'})
+                            for title_dom in titles_dom:
+                                if not title_dom.find('h1', {'class': 'q-headline2'}):
+                                    continue
+                                title = title_dom.find('h1', {'class': 'q-headline2'}).text.strip()
+                                description = title_dom.find_next('p').text.strip()
+                                image = 'https://www.cadillac.com' + title_dom.find_previous('picture').img['src']
+                                if len(title) < 3:
+                                    continue
+                                line = [previous_year, 'Cadillac', model, 'Technology', title, description, image]
+                                print(line)
+                                print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                                self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+            else:
+                year = model[:4]
+                model = model[4:].strip()
+                if 'https://www.cadillac.com' in link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']:
+                    feature_link = link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']
+                else:
+                    feature_link = 'https://www.cadillac.com' + link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']
+                print(feature_link, '+++++++++++++++++++++++++++++++++++++++')
+                year_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                if not year_link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a'):
+                    continue
+                feature_link = 'https://www.cadillac.com' + \
+                               year_link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']
+                feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                separators = feature_link_soup.select('.q-content.content.active-override')
+                for separator in separators:
+                    title = separator.find_all(class_='q-headline1')[-1].text.strip()
+                    description = separator.find(class_='q-text q-body1').text.strip()
+                    image = 'https://www.cadillac.com' + separator.find('picture').img['src']
+                    section = find_parent_under_body(separator).find_previous('div', {
+                        'class': 'q-margin-base q-headline'}).text.strip()
+                    line = [previous_year, 'Cadillac', model, section, title, description, image]
+                    print(line)
+                    self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+
+    def Fiat(self):
+        links = ['https://www.fiat.com//fiat-500', 'https://www.fiat.com//fiat-500c', 'https://www.fiat.com//fiat-500x', 'https://www.fiat.com//fiat-500l', 'https://www.fiat.com//panda', 'https://www.fiat.com//tipo', 'https://www.fiat.com//124-spider', 'https://www.fiat.com//qubo', 'https://www.fiat.com//doblo', 'https://www.fiat.com//fiat-concept-centoventi']
+        for link in links:
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+
+
+    def GMC(self):
+        initial_url = 'https://www.gmc.com/navigation/navigation-flyouts/vehicles.html'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('a[class=stat-image-link]')
+        print(len(vehicles))
+        for vehicle in vehicles:
+            print(vehicle['href'])
 
 
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.Honda()
+    features_2020.Cadillac()
     ford = Ford()
     acura = Acura()
     audi = Audi()
