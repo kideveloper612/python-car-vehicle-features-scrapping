@@ -3991,9 +3991,9 @@ class Features_2020:
         for link in links:
             link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
 
-
     def GMC(self):
         lines = []
+        failed_links = []
         initial_url = 'https://www.gmc.com/navigation/navigation-flyouts/vehicles.html'
         initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
         vehicles = initial_soup.select('a[class=stat-image-link]')
@@ -4065,6 +4065,10 @@ class Features_2020:
                                         description_link = 'https://www.gmc.com' + title_dom.find_previous('a')['href']
                                     else:
                                         description_link = title_dom.find_previous('a')['href']
+                                    print(description_link)
+                                    if requests.get(url=description_link).status_code != 200:
+                                        failed_links.append(description_link)
+                                        continue
                                     if not BeautifulSoup(requests.get(url=description_link).content,
                                                          'html.parser').select('.q-text.q-body1'):
                                         continue
@@ -4080,12 +4084,159 @@ class Features_2020:
                                         lines.append(line)
                                         print(line)
                                         self.chevrolet.write_csv(lines=[line], filename='GMC_2019_2020.csv')
+        print(failed_links)
+
+    def Lincoln(self):
+        lines = []
+        initial_url = 'https://www.lincoln.com/luxury-vehicles/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        multi_vehicle = initial_soup.find_all('div', {'class': 'multiYearVehicleTile section'})
+        for vehicle in multi_vehicle:
+            model = vehicle.find('span', {'class': 'name'}).text.replace('Reserve', '').strip()
+            links = vehicle.find_all('p', {'class': 'main-cta'})
+            for link_dom in links:
+                link = 'https://www.lincoln.com' + link_dom.a['href']
+                year = link.split('/')[-3] if link.split('/')[-2] == 'black-label' else link.split('/')[-2]
+                link = requests.get(url=link).url
+                link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+                section_lis = link_soup.select('li.vehicles li a')
+                for section_li in section_lis:
+                    section = section_li.text.strip()
+                    if 'lincoln.com' in section_li['href']:
+                        section_link = section_li['href']
+                    else:
+                        section_link = 'https://www.lincoln.com' + section_li['href']
+                    print(section_link)
+                    if 'features' not in section_link:
+                        continue
+                    section_link_soup = BeautifulSoup(requests.get(url=section_link).content, 'html5lib')
+                    descriptions_dom = section_link_soup.select('.description.mltext')
+                    for description_dom in descriptions_dom:
+                        title_tmp = description_dom.find_all_previous(class_=re.compile('fgx-brand-'))
+                        if not title_tmp:
+                            continue
+                        for title_t in title_tmp:
+                            if 'h' in title_t.name:
+                                title_com = title_t
+                                break
+                        title = title_com.text.replace('...less', '').strip()
+                        description = description_dom.text.strip()
+                        if len(description) < 15:
+                            continue
+                        if title == description:
+                            continue
+                        image_tmp = description_dom.find_previous('picture')
+                        if not image_tmp:
+                            continue
+                        image = 'https://www.lincoln.com' + image_tmp.img['src']
+                        line = [year, 'Lincoln', model, section, title, description, image]
+                        if not line in lines:
+                            print(line)
+                            self.chevrolet.write_csv(lines=[line], filename='Lincoln_2019_2020.csv')
+
+    def Mazda(self):
+        links = ['https://www.mazdausa.com/vehicles/2020-cx-3', 'https://www.mazdausa.com/vehicles/cx-3', 'https://www.mazdausa.com/vehicles/cx-30', 'https://www.mazdausa.com/vehicles/2020-cx-5', 'https://www.mazdausa.com/vehicles/cx-5', 'https://www.mazdausa.com/vehicles/cx-5-diesel', 'https://www.mazdausa.com/vehicles/2020-cx-9', 'https://www.mazdausa.com/vehicles/cx-9', 'https://www.mazdausa.com/vehicles/2020-mazda3-sedan', 'https://www.mazdausa.com/vehicles/mazda3-sedan', 'https://www.mazdausa.com/vehicles/2020-mazda3-hatchback', 'https://www.mazdausa.com/vehicles/mazda3-hatchback', 'https://www.mazdausa.com/vehicles/mazda6', 'https://www.mazdausa.com/vehicles/2019-mazda6', 'https://www.mazdausa.com/vehicles/mx-5-miata', 'https://www.mazdausa.com/vehicles/2018-mx-5-miata', 'https://www.mazdausa.com/vehicles/mx-5-miata-rf', 'https://www.mazdausa.com/vehicles/2018-mx-5-miata-rf', 'https://www.mazdausa.com/mazda6-signature-skyactivd']
+        links = ['https://www.mazdausa.com/vehicles/cx-3/features', ]
+        for link in links:
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            year_model = link_soup.find('div', {'class': 'component-navigation-1__title'}).text
+            year = year_model[:4].strip()
+            model = year_model[4:].strip()
+            feature_url = link_soup.find_all('a', string='Features')
+            print(feature_url)
+
+    def Mercedes_Benze(self):
+        initial_url = 'https://www.mbusa.com/en/home'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('li.global-header__item')
+        for vehicle in vehicles:
+            model = vehicle.find('p', class_='global-header__item-vehicle-name').text.strip()
+            vehicle_link = 'https://www.mbusa.com' + vehicle.a['href']
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            titles_dom = vehicle_link_soup.select('[class*=media]')
+            if '2021' in vehicle_link:
+                year = '2021'
+            else:
+                year = '2020'
+            print(vehicle_link)
+            for title_com in titles_dom:
+                if 'h' in title_com.name:
+                    title = title_com.text.strip()
+                    description = title_com.find_next(class_=re.compile('media')).text.replace('\n', '').replace('  ', '').strip()
+                    if not title_com.find_previous('picture'):
+                        continue
+                    image = 'https://www.mbusa.com' + title_com.find_previous('picture').img['data-lazy-src']
+                    if not title_com.find_previous(class_='section-header__heading'):
+                        continue
+                    section = title_com.find_previous(class_='section-header__heading').text.strip()
+                    if 'Born to perf' in section:
+                        section = 'PERFORMANCE'
+                    elif 'Allurin' in section or 'Displa' in section or 'Carved' in section or 'Sculpted' in section:
+                        section = 'Design'
+                    elif 'Hand' in section or 'Engineered' in section:
+                        section = 'INNOVATION'
+                    line = [year, 'Mercedes Benze', model, section.upper(), title, description, image]
+                    self.chevrolet.write_csv(lines=[line], filename='Mercedes_Benze_2020.csv')
+                    print(line)
+            slider_headings = vehicle_link_soup.find_all(class_='image-slider__heading')
+            for slider_heading in slider_headings:
+                title = slider_heading.text.strip()
+                description = slider_heading.find_next(class_='image-slider__desc').text.replace('\n', '').replace('  ', '').strip()
+                image = 'https://www.mbusa.com' + slider_heading.find_previous(class_='image-slider__divider').img['data-lazy-src']
+                section = title_com.find_previous(class_='section-header__heading').text.strip()
+                line = [year, 'Mercedes Benze', model, section, title, description, image]
+                self.chevrolet.write_csv(lines=[line], filename='Mercedes_Benze_2020.csv')
+                print(line)
+
+    def Subaru(self):
+        links = ['https://www.subaru.com/vehicles/impreza/index.html', 'https://www.subaru.com/vehicles/legacy/index.html', 'https://www.subaru.com/vehicles/crosstrek/index.html', 'https://www.subaru.com/vehicles/forester/index.html', 'https://www.subaru.com/vehicles/outback/index.html', 'https://www.subaru.com/vehicles/ascent/index.html', 'https://www.subaru.com/vehicles/brz/index.html', 'https://www.subaru.com/vehicles/wrx/index.html']
+        for link in links:
+            print(link)
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            year_model = link_soup.find('span', {'class': 'model-bold'}).text.strip()
+            year = year_model[:4].strip()
+            model = year_model[4:].strip()
+            feature_link = 'https://www.subaru.com' + link_soup.find('li', {'class': 'item-features'}).a['href']
+            feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+            titles_dom = feature_link_soup.select('.title')
+            for title_dom in titles_dom:
+                title = title_dom.text.strip()
+                if not title_dom.find_next(class_='description'):
+                    continue
+                description = title_dom.find_next(class_='description').text.strip()
+                if not title_dom.find_previous('picture'):
+                    continue
+                image = 'https://www.subaru.com' + title_dom.find_previous('picture').img['src']
+                section = title_dom.find_previous(class_='section-title').text.strip()
+                line = [year, 'Subaru', model, section, title, description, image]
+                print(line)
+                self.chevrolet.write_csv(lines=[line], filename='Subaru_2020.csv')
+        for link in links:
+            print(link)
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            year_model = link_soup.find('span', {'class': 'model-bold'}).text.strip()
+            year = year_model[:4].strip()
+            model = year_model[4:].strip()
+            feature_link = 'https://www.subaru.com' + link_soup.find('li', {'class': 'item-features'}).a['href']
+            feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+            spots_info = feature_link_soup.find_all('div', {'class': 'spot-information'})
+            for spot_info in spots_info:
+                if not spot_info.h2:
+                    continue
+                title = spot_info.h2.text.strip()
+                spot_info.h2.decompose()
+                description = spot_info.text.strip()
+                section = spot_info.find_previous(class_='section-title').text.strip()
+                image = 'https://www.subaru.com'
+                line = [year, 'Subaru', model, section, title, description, image]
+                print(line)
+                self.chevrolet.write_csv(lines=[line], filename='Subaru_2020.csv')
 
 
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.GMC()
+    features_2020.Mazda()
     ford = Ford()
     acura = Acura()
     audi = Audi()
