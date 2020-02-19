@@ -3863,9 +3863,8 @@ class Features_2020:
             if ele.parent.name == 'body':
                 return ele
             return ele.parent
-
+        lines = []
         links = ['http://www.cadillac.com/suvs/xt4', 'http://www.cadillac.com/suvs/xt5', 'http://www.cadillac.com/suvs/xt6', 'http://www.cadillac.com/suvs/escalade', 'http://www.cadillac.com/future-vehicles/escalade-suv', 'http://www.cadillac.com/sedans/ct4', 'https://www.cadillac.com/sedans/ct4#ct4-v', 'http://www.cadillac.com/sedans/ct5', 'https://www.cadillac.com/sedans/ct5#ct5-v', 'http://www.cadillac.com/sedans/cts-sedan', 'http://www.cadillac.com/sedans/xts-sedan', 'http://www.cadillac.com/sedans/ct6', 'http://www.cadillac.com/sedans/ct6-v', 'http://www.cadillac.com/suvs/xt4', 'http://www.cadillac.com/suvs/xt5', 'http://www.cadillac.com/suvs/xt6', 'http://www.cadillac.com/suvs/escalade', 'http://www.cadillac.com/future-vehicles/escalade-suv', 'http://www.cadillac.com/sedans/ct4', 'https://www.cadillac.com/sedans/ct4#ct4-v', 'http://www.cadillac.com/sedans/ct5', 'https://www.cadillac.com/sedans/ct5#ct5-v', 'http://www.cadillac.com/sedans/cts-sedan', 'http://www.cadillac.com/sedans/xts-sedan', 'http://www.cadillac.com/sedans/ct6', 'http://www.cadillac.com/sedans/ct6-v', 'https://www.cadillac.com/sedans/ct4#ct4-v', 'https://www.cadillac.com/sedans/ct5#ct5-v', 'http://www.cadillac.com/sedans/ct6-v']
-        links = ['http://www.cadillac.com/sedans/ct4']
         for link in links:
             link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
             model = link_soup.select('#nav_anchor > span')[0].text.strip()
@@ -3881,6 +3880,7 @@ class Features_2020:
                         for override in overrides:
                             section = override.find('span', {'class': 'q-headline-text q-button-text'}).text.strip()
                             titles_desc = override.select('.row.q-gridbuilder.grid-bg-color-one')
+                            print(section)
                             for title_desc in titles_desc:
                                 ttitle_desc = title_desc.find_all('div', recursive=False)
                                 for t_desc in ttitle_desc:
@@ -3894,8 +3894,10 @@ class Features_2020:
                                     if len(title) < 3:
                                         continue
                                     line = [year, 'Cadillac', model, section, title, description, image]
-                                    print(line)
-                                    self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                                    if line not in lines:
+                                        lines.append(line)
+                                        print(line)
+                                        self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
                     else:
                         previous_year = year_toggle_lis[1].text.strip()
                         previous_link = 'https://www.cadillac.com' + year_toggle_lis[1].a['href']
@@ -3914,8 +3916,10 @@ class Features_2020:
                             if len(title) < 3:
                                 continue
                             line = [previous_year, 'Cadillac', model, section, title, description, image]
-                            print(line)
-                            self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                            if line not in lines:
+                                lines.append(line)
+                                print(line)
+                                self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
                         reference_partial = feature_link_soup.find('div', {'class': 'q-margin-base q-reference-partial'})
                         if reference_partial:
                             titles_dom = reference_partial.find_all('div', {'class': 'q-margin-base q-headline'})
@@ -3928,10 +3932,34 @@ class Features_2020:
                                 if len(title) < 3:
                                     continue
                                 line = [previous_year, 'Cadillac', model, 'Technology', title, description, image]
-                                print(line)
-                                print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-                                self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                                if line not in lines:
+                                    lines.append(line)
+                                    print(line)
+                                    print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                                    self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
             else:
+                overrides = link_soup.find_all('div', {'class': 'q-content content active-override'})
+                print(link, '---------------------------------------------------')
+                for override in overrides:
+                    section = override.find('span', {'class': 'q-headline-text q-button-text'}).text.strip()
+                    titles_desc = override.select('.row.q-gridbuilder.grid-bg-color-one')
+                    for title_desc in titles_desc:
+                        ttitle_desc = title_desc.find_all('div', recursive=False)
+                        for t_desc in ttitle_desc:
+                            if not t_desc.picture:
+                                continue
+                            image = 'https://www.cadillac.com' + t_desc.picture.img['src']
+                            if len(t_desc.select('.q-margin-base .q-text.q-body1')) < 2:
+                                continue
+                            title = t_desc.select('.q-margin-base .q-text.q-body1')[0].text.strip()
+                            description = t_desc.select('.q-margin-base .q-text.q-body1')[1].text.strip()
+                            if len(title) < 3:
+                                continue
+                            line = ['2020', 'Cadillac', model, section, title, description, image]
+                            if line not in lines:
+                                lines.append(line)
+                                print(line)
+                                self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
                 year = model[:4]
                 model = model[4:].strip()
                 if 'https://www.cadillac.com' in link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']:
@@ -3952,9 +3980,11 @@ class Features_2020:
                     image = 'https://www.cadillac.com' + separator.find('picture').img['src']
                     section = find_parent_under_body(separator).find_previous('div', {
                         'class': 'q-margin-base q-headline'}).text.strip()
-                    line = [previous_year, 'Cadillac', model, section, title, description, image]
-                    print(line)
-                    self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                    line = [year, 'Cadillac', model, section, title, description, image]
+                    if line not in lines:
+                        lines.append(line)
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
 
     def Fiat(self):
         links = ['https://www.fiat.com//fiat-500', 'https://www.fiat.com//fiat-500c', 'https://www.fiat.com//fiat-500x', 'https://www.fiat.com//fiat-500l', 'https://www.fiat.com//panda', 'https://www.fiat.com//tipo', 'https://www.fiat.com//124-spider', 'https://www.fiat.com//qubo', 'https://www.fiat.com//doblo', 'https://www.fiat.com//fiat-concept-centoventi']
@@ -3963,18 +3993,99 @@ class Features_2020:
 
 
     def GMC(self):
+        lines = []
         initial_url = 'https://www.gmc.com/navigation/navigation-flyouts/vehicles.html'
         initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
         vehicles = initial_soup.select('a[class=stat-image-link]')
-        print(len(vehicles))
         for vehicle in vehicles:
-            print(vehicle['href'])
+            vehicle_url = 'https://www.gmc.com' + vehicle['href']
+            vehicle_soup = BeautifulSoup(requests.get(url=vehicle_url).content, 'html5lib')
+            if not vehicle_soup.find('div', {'class': 'q-sibling-nav-container'}):
+                continue
+            sibling_nav = vehicle_soup.find('div', {'class': 'q-sibling-nav-container'})
+            feature_nav = sibling_nav.find('span', text='FEATURES')
+            if feature_nav:
+                feature_link = 'https://www.gmc.com' + feature_nav.find_parent('a')['href']
+                feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                years_nav = feature_link_soup.select('.q-nav-container .q-year-toggle-list a')
+                for year_nav in years_nav:
+                    year = year_nav.text.strip()
+                    year_link = 'https://www.gmc.com' + year_nav['href']
+                    year_link_soup = BeautifulSoup(requests.get(url=year_link).content, 'html5lib')
+                    model = year_link_soup.select('.q-nav-container > a > span')[0].text[4:].strip()
+                    sections_dom = year_link_soup.find_all('li', {'class': 'q-js-tirtiary-item'})
+                    for section_dom in sections_dom:
+                        section = section_dom.text.strip()
+                        section_link = 'https://www.gmc.com' + section_dom.a['href']
+                        section_link_soup = BeautifulSoup(requests.get(url=section_link).content, 'html5lib')
+                        titles_dom = section_link_soup.select('.q-margin-base .q-text.q-body1')
+                        for title_dom in titles_dom:
+                            if 'gmc.com' not in title_dom.find_previous('a')['href']:
+                                description_link = 'https://www.gmc.com' + title_dom.find_previous('a')['href']
+                            else:
+                                description_link = title_dom.find_previous('a')['href']
+                            if not BeautifulSoup(requests.get(url=description_link).content, 'html.parser').select('.q-text.q-body1'):
+                                continue
+                            description = BeautifulSoup(requests.get(url=description_link).content, 'html.parser').select('.q-text.q-body1')[0].text.strip()
+                            title = title_dom.text.strip()
+                            if not title_dom.find_previous('img').has_attr('src'):
+                                continue
+                            image = 'https://www.gmc.com' + title_dom.find_previous('img')['src']
+                            line = [year, 'GMC', model, section, title, description, image]
+                            if line not in lines:
+                                lines.append(line)
+                                print(line)
+                                self.chevrolet.write_csv(lines=[line], filename='GMC_2019_2020.csv')
+            else:
+                rights_nav = vehicle_soup.select('ul.q-scroller-list.q-sibling-nav-list.inline-list > li.hide-for-large-down a')
+                for right_nav in rights_nav:
+                    right_nav_link = 'https://www.gmc.com' + right_nav['href']
+                    right_nav_link_soup = BeautifulSoup(requests.get(url=right_nav_link).content, 'html5lib')
+                    if not right_nav_link_soup.find('div', {'class': 'q-sibling-nav-container'}):
+                        continue
+                    sibling_nav = right_nav_link_soup.find('div', {'class': 'q-sibling-nav-container'})
+                    feature_nav = sibling_nav.find('span', text='FEATURES')
+                    if feature_nav:
+                        feature_link = 'https://www.gmc.com' + feature_nav.find_parent('a')['href']
+                        feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                        years_nav = feature_link_soup.select('.q-nav-container .q-year-toggle-list a')
+                        for year_nav in years_nav:
+                            year = year_nav.text.strip()
+                            year_link = 'https://www.gmc.com' + year_nav['href']
+                            year_link_soup = BeautifulSoup(requests.get(url=year_link).content, 'html5lib')
+                            model = year_link_soup.select('.q-nav-container > a > span')[0].text[4:].strip()
+                            sections_dom = year_link_soup.find_all('li', {'class': 'q-js-tirtiary-item'})
+                            for section_dom in sections_dom:
+                                section = section_dom.text.strip()
+                                section_link = 'https://www.gmc.com' + section_dom.a['href']
+                                section_link_soup = BeautifulSoup(requests.get(url=section_link).content, 'html5lib')
+                                titles_dom = section_link_soup.select('.q-margin-base .q-text.q-body1')
+                                for title_dom in titles_dom:
+                                    if 'gmc.com' not in title_dom.find_previous('a')['href']:
+                                        description_link = 'https://www.gmc.com' + title_dom.find_previous('a')['href']
+                                    else:
+                                        description_link = title_dom.find_previous('a')['href']
+                                    if not BeautifulSoup(requests.get(url=description_link).content,
+                                                         'html.parser').select('.q-text.q-body1'):
+                                        continue
+                                    description = \
+                                    BeautifulSoup(requests.get(url=description_link).content, 'html.parser').select(
+                                        '.q-text.q-body1')[0].text.strip()
+                                    title = title_dom.text.strip()
+                                    if not title_dom.find_previous('img').has_attr('src'):
+                                        continue
+                                    image = 'https://www.gmc.com' + title_dom.find_previous('img')['src']
+                                    line = [year, 'GMC', model, section, title, description, image]
+                                    if line not in lines:
+                                        lines.append(line)
+                                        print(line)
+                                        self.chevrolet.write_csv(lines=[line], filename='GMC_2019_2020.csv')
 
 
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.Cadillac()
+    features_2020.GMC()
     ford = Ford()
     acura = Acura()
     audi = Audi()
