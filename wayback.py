@@ -2665,7 +2665,7 @@ class Chevrolet:
 
     def read_csv(self, filepath):
         records = []
-        with open(filepath, "r", encoding='utf8') as csv_file:
+        with open(filepath, "r") as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for row in csv_reader:
                 records.append(row)
@@ -4136,14 +4136,19 @@ class Features_2020:
 
     def Mazda(self):
         links = ['https://www.mazdausa.com/vehicles/2020-cx-3', 'https://www.mazdausa.com/vehicles/cx-3', 'https://www.mazdausa.com/vehicles/cx-30', 'https://www.mazdausa.com/vehicles/2020-cx-5', 'https://www.mazdausa.com/vehicles/cx-5', 'https://www.mazdausa.com/vehicles/cx-5-diesel', 'https://www.mazdausa.com/vehicles/2020-cx-9', 'https://www.mazdausa.com/vehicles/cx-9', 'https://www.mazdausa.com/vehicles/2020-mazda3-sedan', 'https://www.mazdausa.com/vehicles/mazda3-sedan', 'https://www.mazdausa.com/vehicles/2020-mazda3-hatchback', 'https://www.mazdausa.com/vehicles/mazda3-hatchback', 'https://www.mazdausa.com/vehicles/mazda6', 'https://www.mazdausa.com/vehicles/2019-mazda6', 'https://www.mazdausa.com/vehicles/mx-5-miata', 'https://www.mazdausa.com/vehicles/2018-mx-5-miata', 'https://www.mazdausa.com/vehicles/mx-5-miata-rf', 'https://www.mazdausa.com/vehicles/2018-mx-5-miata-rf', 'https://www.mazdausa.com/mazda6-signature-skyactivd']
-        links = ['https://www.mazdausa.com/vehicles/cx-3/features', ]
+        # links = ['https://www.mazdausa.com/vehicles/cx-3/features', ]
         for link in links:
+            print(link)
             link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
             year_model = link_soup.find('div', {'class': 'component-navigation-1__title'}).text
             year = year_model[:4].strip()
             model = year_model[4:].strip()
-            feature_url = link_soup.find_all('a', string='Features')
-            print(feature_url)
+            print(link_soup.select('body > main > div:nth-child(1) > div > div > div > nav.component-navigation-1.container.rendered > ul > li:nth-child(3) > a'))
+            # ul_child = link_soup.select('ul.level-1:nth-child(1)')[0]
+            # if ul_child and ul_child.find('a', attr={'title': 'Features'}):
+            #     feature_url = 'https://www.mazdausa.com' + link_soup.select('ul.level-1:nth-child(1)')[0].find('a', attr={'title': 'Features'})['href']
+            # else:
+            #     continue
 
     def Mercedes_Benze(self):
         initial_url = 'https://www.mbusa.com/en/home'
@@ -4232,11 +4237,129 @@ class Features_2020:
                 print(line)
                 self.chevrolet.write_csv(lines=[line], filename='Subaru_2020.csv')
 
+    def Ford_Gallery(self):
+        initial_url = 'https://www.ford.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('.tertiary_menu.nav.navbar-nav.vehicles > li')
+        for i in range(len(vehicles) // 2):
+            vehicle = vehicles[i]
+            year = vehicle.find('span', class_='year').text[:4].strip()
+            model = vehicle.find('span', class_='year').text[4:].strip()
+            link = 'https://www.ford.com' + vehicle.a['href'].strip().replace('?gnav=header-all-vehicles', 'gallery')
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            gallery_images = link_soup.find_all('div', {'class': 'gallery-img'})
+            print(link)
+            for gallery_image in gallery_images:
+                if gallery_image.picture.img.has_attr('src'):
+                    image = 'https://www.ford.com' + gallery_image.picture.img['src']
+                    section = gallery_image.find_previous(class_='gallery-category-headline').text.strip()
+                    line = [year, 'Ford', model, section.upper(), image]
+                    print(line)
+                    self.chevrolet.write_csv_gallery(lines=[line], filename='Ford_Gallery_2020.csv')
+                elif gallery_image.picture.find_all('source')[-1].has_attr('srcset'):
+                    image = 'https://www.ford.com' + gallery_image.picture.find_all('source')[-1]['srcset']
+                    section = gallery_image.find_previous(class_='gallery-category-headline').text.strip()
+                    line = [year, 'Ford', model, section.upper(), image]
+                    print(line)
+                    self.chevrolet.write_csv_gallery(lines=[line], filename='Ford_Gallery_2020.csv')
+                elif gallery_image.picture.find_all('source')[-1].has_attr('data-srcset'):
+                    image = 'https://www.ford.com' + gallery_image.picture.find_all('source')[-1]['data-srcset']
+                    section = gallery_image.find_previous(class_='gallery-category-headline').text.strip()
+                    line = [year, 'Ford', model, section.upper(), image]
+                    print(line)
+                    self.chevrolet.write_csv_gallery(lines=[line], filename='Ford_Gallery_2020.csv')
+                else:
+                    print(gallery_image)
+                    exit(4)
+
+    def Nissan_Gallery(self):
+        initial_url = 'https://www.nissanusa.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'lxml')
+        vehicle_links = initial_soup.select('.tabs-content .vehicles-container > a')
+        collect = []
+        for vehicle_link in vehicle_links:
+            link = 'https://nissanusa.com' + vehicle_link['href']
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'lxml')
+            year_model = link_soup.find('p', attrs={'class': 'page-title'}).get_text().strip()
+            year = year_model[:4]
+            model = year_model[4:].strip()
+            nav = link_soup.find('nav', {'class': 'c_283_menu_bar'})
+            if nav:
+                gallery_link = link.replace('.html', '/gallery.html')
+                print(gallery_link)
+                gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html5lib')
+                images = gallery_link_soup.find_all('div', {'class': 'c_274-image'})
+                for image in images:
+                    if image.img.has_attr('src'):
+                        image_url = 'https://www.nissanusa.com' + image.img['src']
+                    elif image.img.has_attr('data-src'):
+                        image_url = 'https://www.nissanusa.com' + image.img['data-src']
+                    section = image.find_previous(class_='usg-heading-3').text.strip()
+                    line = [year, 'Nissan', model, section, image_url]
+                    if '' not in line:
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Nissan_2020.csv')
+            else:
+                gallery_link = link.replace('.html', '/design.html')
+                print(gallery_link)
+                gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html5lib')
+                images = gallery_link_soup.find_all('div', {'class': 'mosaicImage'})
+                for image in images:
+                    image_url = 'https://www.nissanusa.com' + image.img['src']
+                    if image.find_previous(class_='heading'):
+                        section_tmp = image.find_previous(class_='heading').text.upper()
+                        if 'EXTERIOR' in section_tmp:
+                            section = 'EXTERIOR'
+                        elif 'INTERIOR' in section_tmp:
+                            section = 'INTERIOR'
+                        else:
+                            section = section_tmp.strip()
+                        line = [year, 'Nissan', model, section, image_url]
+                        if '' not in line:
+                            print(line)
+                            self.chevrolet.write_csv(lines=[line], filename='Nissan_2020.csv')
+                    else:
+                        section = 'EXTERIOR & INTERIOR'
+                        line = [year, 'Nissan', model, section, image_url]
+                    if '' not in line:
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Nissan_2020.csv')
+                video_gallies = gallery_link_soup.find_all('div', {'class': 'videoContentPromotion'})
+                for video_gally in video_gallies:
+                    video_url = 'https:' + video_gally.figure.a['href']
+                    section = 'VIDEO GALLERY'
+                    line = [year, 'Nissan', model, section, video_url]
+                    if '' not in line:
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Nissan_2020.csv')
+
+    def GMC_GALLERY(self):
+        lines = []
+        failed_links = []
+        initial_url = 'https://www.gmc.com/navigation/navigation-flyouts/vehicles.html'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('a[class=stat-image-link]')
+        for vehicle in vehicles:
+            vehicle_url = 'https://www.gmc.com' + vehicle['href']
+            vehicle_soup = BeautifulSoup(requests.get(url=vehicle_url).content, 'html5lib')
+            if not vehicle_soup.find('div', {'class': 'q-sibling-nav-container'}):
+                continue
+            sibling_nav = vehicle_soup.find('div', {'class': 'q-sibling-nav-container'})
+            feature_nav = sibling_nav.find('span', text='FEATURES')
+            print(vehicle_url)
+
+    def sorted(self):
+        lines = self.chevrolet.read_csv(filepath='output/Nissan_2020.csv')
+        sort_lines = list(set(tuple(map(tuple, lines))))
+        sort_lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=sort_lines, filename='tet.csv')
+        print(sort_lines)
+
 
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.Mazda()
+    features_2020.sorted()
     ford = Ford()
     acura = Acura()
     audi = Audi()
