@@ -4345,8 +4345,60 @@ class Features_2020:
             if not vehicle_soup.find('div', {'class': 'q-sibling-nav-container'}):
                 continue
             sibling_nav = vehicle_soup.find('div', {'class': 'q-sibling-nav-container'})
-            feature_nav = sibling_nav.find('span', text='FEATURES')
-            print(vehicle_url)
+            feature_nav = sibling_nav.find('span', text='GAllERY')
+            if feature_nav:
+                feature_link = 'https://www.gmc.com' + feature_nav.find_parent('a')['href']
+                feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                years_nav = feature_link_soup.select('.q-nav-container .q-year-toggle-list a')
+                for year_nav in years_nav:
+                    year = year_nav.text.strip()
+                    year_link = 'https://www.gmc.com' + year_nav['href']
+                    year_link_soup = BeautifulSoup(requests.get(url=year_link).content, 'html5lib')
+                    model = year_link_soup.select('.q-nav-container > a > span')[0].text[4:].strip()
+                    gallery_link = 'https://www.gmc.com' + year_link_soup.find('div', attrs={'class': 'clearfix q-mod q-mod-gallery-preview'})['data-gallery-layer'] + '/jcr:content/content.html'
+                    gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html.parser')
+                    sliders = gallery_link_soup.find_all('li', {'class': 'q-slider-item js-thumbnail stat-image-link'})
+                    for slider in sliders:
+                        image_link = 'https://www.gmc.com' + slider.img['src']
+                        section = slider.find_previous(class_='q-gallery-headline').span.text.strip()
+                        line = [year, 'GMC', model, section.upper(), image_link]
+                        print(line)
+                        self.chevrolet.write_csv_gallery(lines=[line], filename='GMC_Gallery_2019_2020.csv')
+                    print(gallery_link)
+            else:
+                rights_nav = vehicle_soup.select(
+                    'ul.q-scroller-list.q-sibling-nav-list.inline-list > li.hide-for-large-down a')
+                for right_nav in rights_nav:
+                    right_nav_link = 'https://www.gmc.com' + right_nav['href']
+                    if 'gmc.com' in right_nav['href']:
+                        right_nav_link = right_nav['href']
+                    right_nav_link_soup = BeautifulSoup(requests.get(url=right_nav_link).content, 'html5lib')
+                    if not right_nav_link_soup.find('div', {'class': 'q-sibling-nav-container'}):
+                        continue
+                    sibling_nav = right_nav_link_soup.find('div', {'class': 'q-sibling-nav-container'})
+                    feature_nav = sibling_nav.find('span', text='GALLERY')
+                    if feature_nav:
+                        feature_link = 'https://www.gmc.com' + feature_nav.find_parent('a')['href']
+                        feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                        years_nav = feature_link_soup.select('.q-nav-container .q-year-toggle-list a')
+                        for year_nav in years_nav:
+                            year = year_nav.text.strip()
+                            year_link = 'https://www.gmc.com' + year_nav['href']
+                            year_link_soup = BeautifulSoup(requests.get(url=year_link).content, 'html5lib')
+                            model = year_link_soup.select('.q-nav-container > a > span')[0].text[4:].strip()
+                            gallery_link = 'https://www.gmc.com' + year_link_soup.find('div', attrs={'class': 'clearfix q-mod q-mod-gallery-preview'})['data-gallery-layer'] + '/jcr:content/content.html'
+                            gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html.parser')
+                            sliders = gallery_link_soup.find_all('li', {
+                                'class': 'q-slider-item js-thumbnail stat-image-link'})
+                            for slider in sliders:
+                                image_link = 'https://www.gmc.com' + slider.img['src']
+                                section = slider.find_previous(class_='q-gallery-headline').span.text.strip()
+                                line = [year, 'GMC', model, section.upper(), image_link]
+                                print(line)
+                                self.chevrolet.write_csv_gallery(lines=[line], filename='GMC_Gallery_2019_2020.csv')
+                            print(gallery_link)
+        print('=====================================')
+        print(failed_links)
 
     def sorted(self):
         lines = self.chevrolet.read_csv(filepath='output/Nissan_2020.csv')
@@ -4355,11 +4407,256 @@ class Features_2020:
         self.chevrolet.write_csv_gallery(lines=sort_lines, filename='tet.csv')
         print(sort_lines)
 
+    def Lincoln_Gallery(self):
+        lines = []
+        initial_url = 'https://www.lincoln.com/luxury-vehicles/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        multi_vehicle = initial_soup.find_all('div', {'class': 'multiYearVehicleTile section'})
+        for vehicle in multi_vehicle:
+            model = vehicle.find('span', {'class': 'name'}).text.replace('Reserve', '').strip()
+            links = vehicle.find_all('p', {'class': 'main-cta'})
+            for link_dom in links:
+                link = 'https://www.lincoln.com' + link_dom.a['href']
+                year = link.split('/')[-3] if link.split('/')[-2] == 'black-label' else link.split('/')[-2]
+                link = requests.get(url=link).url + 'gallery/'
+                link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+                gallery_images = link_soup.find_all('div', {'class': 'gallery-img'})
+                for gallery_image in gallery_images:
+                    gallery_link = 'https://www.lincoln.com' + gallery_image.img['src']
+                    section = gallery_image.find_previous(class_='gallery-category-headline').text
+                    section_array = section.split(' ')
+                    if len(section_array) == 1:
+                        continue
+                    section = section_array[0].upper()
+                    line = [year, 'Lincoln', model, section, gallery_link]
+                    print(line)
+                    self.chevrolet.write_csv_gallery(lines=[line], filename='Lincoln_Gallery_2019_2020.csv')
+                print(link)
+                videos = link_soup.find_all(class_='video-wrap')
+                for video in videos:
+                    video_image = 'https://www.lincoln.com' + video.img['src']
+                    section = 'VIDEO'
+                    line = [year, 'Lincoln', model, section, video_image]
+                    print(line)
+                    self.chevrolet.write_csv_gallery(lines=[line], filename='Lincoln_Gallery_2019_2020.csv')
+
+    def Mercedes_Benze_Gallery(self):
+        initial_url = 'https://www.mbusa.com/en/home'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('li.global-header__item')
+        for vehicle in vehicles:
+            model = vehicle.find('p', class_='global-header__item-vehicle-name').text.strip()
+            vehicle_link = 'https://www.mbusa.com' + vehicle.a['href'] + '/jcr:content/gallery-section.gallery-json.html'
+            print(vehicle_link)
+            if '2021' in vehicle_link:
+                year = '2021'
+            else:
+                year = '2020'
+            res = requests.get(url=vehicle_link)
+            if res.status_code == 200:
+                vehicles = res.json()
+                for vehicle in vehicles:
+                    iamge = 'https://www.mbusa.com' + vehicle['galleryItems'][0]['media']['wallpaperImage']
+                    section = vehicle['galleryCategory']
+                    line = [year, 'Mercedes Benze', model, section.upper(), iamge]
+                    print(line)
+                    self.chevrolet.write_csv_gallery(lines=[line], filename='Mercedes_Benze_2020.csv')
+
+    def Subaru_Gallery(self):
+        from xml.etree import ElementTree as ET
+        links = ['https://www.subaru.com/vehicles/impreza/index.html',
+                 'https://www.subaru.com/vehicles/legacy/index.html',
+                 'https://www.subaru.com/vehicles/crosstrek/index.html',
+                 'https://www.subaru.com/vehicles/forester/index.html',
+                 'https://www.subaru.com/vehicles/outback/index.html',
+                 'https://www.subaru.com/vehicles/ascent/index.html', 'https://www.subaru.com/vehicles/brz/index.html',
+                 'https://www.subaru.com/vehicles/wrx/index.html']
+        for link in links:
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            year_model = link_soup.find('span', {'class': 'model-bold'}).text.strip()
+            year = year_model[:4].strip()
+            model = year_model[4:].strip()
+            gallery_link = 'https://www.subaru.com' + link_soup.find('li', {'class': 'item-gallery'}).a['href']
+            gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html5lib')
+            gallery_xml = gallery_link_soup.find('div', {'data-gallerytype': 'SubaruVspGrid'})
+            gallery_xml_link = gallery_xml['data-xmlpath'] + gallery_xml['data-rel']
+            xml_data = requests.get(url=gallery_xml_link).content
+            soup = BeautifulSoup(xml_data, 'xml')
+            images = soup.findAll('image')
+            print(gallery_link)
+            for image in images:
+                filename = image.imageFileName
+                image_url = 'https://secure-akns.subaru.com/content/media/mp_fullscreen_1920/' + filename.get_text()
+                section = image.searchTagDisplay
+                if not section:
+                    continue
+                line = [year, 'Subaru', model, section.get_text().upper().strip(), image_url]
+                print(line)
+                self.chevrolet.write_csv_gallery(lines=[line], filename='Subaru_Gallery_2020.csv')
+            videos = soup.findAll('video')
+            for video in videos:
+                video_url = 'https://secure-akns.subaru.com/content/media/mp_video_768/' + video.videoFileName.text
+                poster = 'https://secure-akns.subaru.com/content/media/mp_fullscreen_1920/' + video.imageFileName.text
+                section = 'VIDEO'
+                line = [year, 'Subaru', model, section, poster, video_url]
+                print(line)
+                self.chevrolet.write_csv_gallery(lines=[line], filename='Subaru_Gallery_2020.csv')
+
+    def Cadillac_Gallery(self):
+        def find_parent_under_body(ele):
+            if ele.parent.name == 'body':
+                return ele
+            return ele.parent
+        lines = []
+        links = ['http://www.cadillac.com/suvs/xt4', 'http://www.cadillac.com/suvs/xt5',
+                 'http://www.cadillac.com/suvs/xt6', 'http://www.cadillac.com/suvs/escalade',
+                 'http://www.cadillac.com/future-vehicles/escalade-suv', 'http://www.cadillac.com/sedans/ct4',
+                 'https://www.cadillac.com/sedans/ct4#ct4-v', 'http://www.cadillac.com/sedans/ct5',
+                 'https://www.cadillac.com/sedans/ct5#ct5-v', 'http://www.cadillac.com/sedans/cts-sedan',
+                 'http://www.cadillac.com/sedans/xts-sedan', 'http://www.cadillac.com/sedans/ct6',
+                 'http://www.cadillac.com/sedans/ct6-v', 'http://www.cadillac.com/suvs/xt4',
+                 'http://www.cadillac.com/suvs/xt5', 'http://www.cadillac.com/suvs/xt6',
+                 'http://www.cadillac.com/suvs/escalade', 'http://www.cadillac.com/future-vehicles/escalade-suv',
+                 'http://www.cadillac.com/sedans/ct4', 'https://www.cadillac.com/sedans/ct4#ct4-v',
+                 'http://www.cadillac.com/sedans/ct5', 'https://www.cadillac.com/sedans/ct5#ct5-v',
+                 'http://www.cadillac.com/sedans/cts-sedan', 'http://www.cadillac.com/sedans/xts-sedan',
+                 'http://www.cadillac.com/sedans/ct6', 'http://www.cadillac.com/sedans/ct6-v',
+                 'https://www.cadillac.com/sedans/ct4#ct4-v', 'https://www.cadillac.com/sedans/ct5#ct5-v',
+                 'http://www.cadillac.com/sedans/ct6-v']
+        for link in links:
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            model = link_soup.select('#nav_anchor > span')[0].text.strip()
+            year_toggle_lis = link_soup.select('.q-year-toggle-list li')
+            if len(year_toggle_lis) == 2:
+                for year_toggle_li in year_toggle_lis:
+                    year = year_toggle_li.text.strip()
+                    year_link = 'https://www.cadillac.com' + year_toggle_li.a['href']
+                    year_link_soup = BeautifulSoup(requests.get(url=year_link).content, 'html5lib')
+                    if year_link_soup.find_all('div', {
+                        'class': 'q-content content active-override'}) and 'preceding-year' not in year_link:
+                        overrides = year_link_soup.find_all('div', {'class': 'q-content content active-override'})
+                        print(year_link, '---------------------------------------------------')
+                        for override in overrides:
+                            section = override.find('span', {'class': 'q-headline-text q-button-text'}).text.strip()
+                            titles_desc = override.select('.row.q-gridbuilder.grid-bg-color-one')
+                            print(section)
+                            for title_desc in titles_desc:
+                                ttitle_desc = title_desc.find_all('div', recursive=False)
+                                for t_desc in ttitle_desc:
+                                    if not t_desc.picture:
+                                        continue
+                                    image = 'https://www.cadillac.com' + t_desc.picture.img['src']
+                                    if len(t_desc.select('.q-margin-base .q-text.q-body1')) < 2:
+                                        continue
+                                    title = t_desc.select('.q-margin-base .q-text.q-body1')[0].text.strip()
+                                    description = t_desc.select('.q-margin-base .q-text.q-body1')[1].text.strip()
+                                    if len(title) < 3:
+                                        continue
+                                    line = [year, 'Cadillac', model, section, title, description, image]
+                                    if line not in lines:
+                                        lines.append(line)
+                                        print(line)
+                                        self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                    else:
+                        previous_year = year_toggle_lis[1].text.strip()
+                        previous_link = 'https://www.cadillac.com' + year_toggle_lis[1].a['href']
+                        year_link_soup = BeautifulSoup(requests.get(url=previous_link).content, 'html5lib')
+                        feature_link = 'https://www.cadillac.com' + \
+                                       year_link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0][
+                                           'href']
+                        print(feature_link, '==========================')
+                        feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                        separators = feature_link_soup.select('.q-content.content.active-override')
+                        for separator in separators:
+                            if separator.find(class_='q-headline1').style:
+                                separator.find(class_='q-headline1').style.decompose()
+                            title = separator.find(class_='q-headline1').text.strip()
+                            description = separator.find(class_='q-text q-body1').text.strip()
+                            image = 'https://www.cadillac.com' + separator.find('picture').img['src']
+                            section = find_parent_under_body(separator).find_previous('div', {
+                                'class': 'q-margin-base q-headline'}).text.strip()
+                            if len(title) < 3:
+                                continue
+                            line = [previous_year, 'Cadillac', model, section, title, description, image]
+                            if line not in lines:
+                                lines.append(line)
+                                print(line)
+                                self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                        reference_partial = feature_link_soup.find('div',
+                                                                   {'class': 'q-margin-base q-reference-partial'})
+                        if reference_partial:
+                            titles_dom = reference_partial.find_all('div', {'class': 'q-margin-base q-headline'})
+                            for title_dom in titles_dom:
+                                if not title_dom.find('h1', {'class': 'q-headline2'}):
+                                    continue
+                                title = title_dom.find('h1', {'class': 'q-headline2'}).text.strip()
+                                description = title_dom.find_next('p').text.strip()
+                                image = 'https://www.cadillac.com' + title_dom.find_previous('picture').img['src']
+                                if len(title) < 3:
+                                    continue
+                                line = [previous_year, 'Cadillac', model, 'Technology', title, description, image]
+                                if line not in lines:
+                                    lines.append(line)
+                                    print(line)
+                                    print(
+                                        '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+                                    self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+            else:
+                overrides = link_soup.find_all('div', {'class': 'q-content content active-override'})
+                print(link, '---------------------------------------------------')
+                for override in overrides:
+                    section = override.find('span', {'class': 'q-headline-text q-button-text'}).text.strip()
+                    titles_desc = override.select('.row.q-gridbuilder.grid-bg-color-one')
+                    for title_desc in titles_desc:
+                        ttitle_desc = title_desc.find_all('div', recursive=False)
+                        for t_desc in ttitle_desc:
+                            if not t_desc.picture:
+                                continue
+                            image = 'https://www.cadillac.com' + t_desc.picture.img['src']
+                            if len(t_desc.select('.q-margin-base .q-text.q-body1')) < 2:
+                                continue
+                            title = t_desc.select('.q-margin-base .q-text.q-body1')[0].text.strip()
+                            description = t_desc.select('.q-margin-base .q-text.q-body1')[1].text.strip()
+                            if len(title) < 3:
+                                continue
+                            line = ['2020', 'Cadillac', model, section, title, description, image]
+                            if line not in lines:
+                                lines.append(line)
+                                print(line)
+                                self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+                year = model[:4]
+                model = model[4:].strip()
+                if 'https://www.cadillac.com' in link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0][
+                    'href']:
+                    feature_link = link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']
+                else:
+                    feature_link = 'https://www.cadillac.com' + \
+                                   link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']
+                print(feature_link, '+++++++++++++++++++++++++++++++++++++++')
+                year_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                if not year_link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a'):
+                    continue
+                feature_link = 'https://www.cadillac.com' + \
+                               year_link_soup.select('.q-sibling-nav-container ul > li:nth-child(2) a')[0]['href']
+                feature_link_soup = BeautifulSoup(requests.get(url=feature_link).content, 'html5lib')
+                separators = feature_link_soup.select('.q-content.content.active-override')
+                for separator in separators:
+                    title = separator.find_all(class_='q-headline1')[-1].text.strip()
+                    description = separator.find(class_='q-text q-body1').text.strip()
+                    image = 'https://www.cadillac.com' + separator.find('picture').img['src']
+                    section = find_parent_under_body(separator).find_previous('div', {
+                        'class': 'q-margin-base q-headline'}).text.strip()
+                    line = [year, 'Cadillac', model, section, title, description, image]
+                    if line not in lines:
+                        lines.append(line)
+                        print(line)
+                        self.chevrolet.write_csv(lines=[line], filename='Cadillac_2019_2020.csv')
+
 
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.sorted()
+    features_2020.Subaru_Gallery()
     ford = Ford()
     acura = Acura()
     audi = Audi()
