@@ -4923,11 +4923,497 @@ class Features_2020:
         lines.sort(key=lambda x:(x[0], x[2], x[3]))
         self.chevrolet.write_csv_gallery(lines=lines, filename='Jeep_Gallery_2019_2020.csv')
 
+    def Chrysler_Gallery(self):
+        initial_url = 'https://www.chrysler.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).text, 'lxml')
+        vehicles = initial_soup.find_all('div', {
+            'class': 'col-item sdp-col sdp-col-xs-6 sdp-col-sm-6 sdp-col-md-6 sdp-col-lg-3 flush'})
+        gallery_links = []
+        lines = []
+        for vehicle in vehicles:
+            link = 'https://www.chrysler.com' + vehicle.find('a')['href']
+            print(link)
+            link_soup = BeautifulSoup(requests.get(url=link).text, 'lxml')
+            year_model = link_soup.find('div', {'class': 'model-name-text'})
+            year = year_model.get_text()[:4]
+            model = year_model.get_text()[4:].strip()
+            if 'voyager' in link:
+                continue
+            elif 'pacifica' in link:
+                gallery_link = 'https://www.chrysler.com/pacifica/gallery.html'
+            elif '300' in link:
+                next_year = link_soup.find('a', attrs={'data-cats-id': 'link'}).get_text().strip()
+                gallery_link = 'https://www.chrysler.com/2020/300/gallery.html'
+            if gallery_link in gallery_links:
+                continue
+            gallery_links.append(gallery_link)
+            gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html5lib')
+            data_props = gallery_link_soup.find('div', attrs={'data-component': 'Gallery'})['data-props']
+            data_props_json = json.loads(data_props)
+            assets = data_props_json['galleryData']['filterableList']['assets']
+            for asset in assets:
+                if 'media' in asset['mediaContent']:
+                    gallery_url = 'https://www.chrysler.com' + asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
+                    section = asset['categories'][0]
+                    line = [year, 'Chrysler', model, section.upper(), gallery_url]
+                    print(line)
+                    lines.append(line)
+                elif 'activeVideoThumb' in asset['mediaContent']:
+                    thumb_image = 'https://www.chrysler.com' + asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['thumbImage']['lg'][0]
+                    video_url = 'https://www.youtube.com/watch?v=' + asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['videoSrc']
+                    section = asset['categories'][0]
+                    line = [year, 'Chrysler', model, section.upper(), thumb_image, video_url]
+                    print(line)
+                    lines.append(line)
+        lines.sort(key=lambda x:(x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Chrysler_Gallery_2019_2020.csv')
+
+    def Honda_Gallery(self):
+        request_url = 'https://automobiles.honda.com/Honda_Automobiles/SortVehicleCards/Json/%7BF5855B0D-D2CA-4837-A7CC-ECC9DBB80F1C%7D?sortDropDownDisplayXS=False&amp;sortDropDownDisplayS=False&amp;sortDropDownDisplayM=False&amp;sortDropDownDisplayL=True&amp;sortDropDownDisplayXL=True&amp;sortIsFlyout=False'
+        vehicles = requests.get(url=request_url).json()['vehicles']
+        lines = []
+        for vehicle in vehicles:
+            vehicle_url = 'https://automobiles.honda.com' + vehicle['vehicleImageCTA']['url']
+            vehicle_soup = BeautifulSoup(requests.get(url=vehicle_url).content, 'lxml')
+            sticky_nav = vehicle_soup.select('.m_stickyNav .left-content')
+            model = sticky_nav[0].find('div', {'class': 'title'}).text.strip()
+            year = sticky_nav[0].select('.years ul li')
+            if len(year) == 2:
+                previous_year = year[0].get_text().strip()
+                previous_link = 'https://automobiles.honda.com' + year[0].a['href'] + '/gallery?stub=1'
+                previous_link_soup = BeautifulSoup(requests.get(url=previous_link).content, 'html5lib')
+                medias = previous_link_soup.select('.hrt-image-wall-behavior > li')
+                print(previous_link)
+                for media in medias:
+                    gallery_url = 'https://automobiles.honda.com' + media['data-full-img-large-1x']
+                    section = media['data-filters'].upper()
+                    if media.has_attr('data-yt-video-id'):
+                        gallery_url = 'https://automobiles.honda.com' + media['data-img-large-1x']
+                        video_url = 'https://www.youtube.com/watch?v=' + media['data-yt-video-id']
+                        line = [previous_year, 'Honda', model, section, gallery_url, video_url]
+                        print(line)
+                        lines.append(line)
+                    else:
+                        line = [previous_year, 'Honda', model, section, gallery_url]
+                        print(line)
+                        lines.append(line)
+                next_year = year[1].get_text().strip()
+                next_link = 'https://automobiles.honda.com' + year[1].a['href'] + '/gallery?stub=1'
+                next_link_soup = BeautifulSoup(requests.get(url=next_link).content, 'html5lib')
+                medias = next_link_soup.select('.hrt-image-wall-behavior > li')
+                print(next_link)
+                for media in medias:
+                    gallery_url = 'https://automobiles.honda.com' + media['data-full-img-large-1x']
+                    section = media['data-filters'].upper()
+                    if media.has_attr('data-yt-video-id'):
+                        gallery_url = 'https://automobiles.honda.com' + media['data-img-large-1x']
+                        video_url = 'https://www.youtube.com/watch?v=' + media['data-yt-video-id']
+                        line = [next_year, 'Honda', model, section, gallery_url, video_url]
+                        print(line)
+                        lines.append(line)
+                    else:
+                        line = [next_year, 'Honda', model, section, gallery_url]
+                        print(line)
+                        lines.append(line)
+            else:
+                current_year = year[0].get_text().strip()
+                vehicle_url = vehicle_url + '/gallery?stub=1'
+                current_link_soup = BeautifulSoup(requests.get(url=vehicle_url).content, 'html5lib')
+                medias = current_link_soup.select('.hrt-image-wall-behavior > li')
+                print(vehicle_url)
+                for media in medias:
+                    gallery_url = 'https://automobiles.honda.com' + media['data-full-img-large-1x']
+                    section = media['data-filters'].upper()
+                    if media.has_attr('data-yt-video-id'):
+                        gallery_url = 'https://automobiles.honda.com' + media['data-img-large-1x']
+                        video_url = 'https://www.youtube.com/watch?v=' + media['data-yt-video-id']
+                        line = [current_year, 'Honda', model, section, gallery_url, video_url]
+                        print(line)
+                        lines.append(line)
+                    else:
+                        line = [current_year, 'Honda', model, section, gallery_url]
+                        print(line)
+                        lines.append(line)
+        lines.sort(key=lambda x:(x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Honda_Gallery_2019_2020.csv')
+
+    def Kia_Gallery(self):
+        initial_html = """
+        <ul class="list_vehicles">
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/all-new-picanto.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_all_new_picanto1.png" alt="Picanto">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_picanto1_txt_ver2.png" class="txt" alt="Picanto" data-width="92" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_all_new_picanto1_upcoming_ver2.png" class="car" alt="Picanto">
+                                        </div>
+                                        <em class="name">Picanto</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/all-new-rio-4dr.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_all_new_rio_4door1.png" alt="Rio Sedan">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio_4door1_txt_ver2.png" class="txt" alt="Rio Sedan" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio_4door1_upcoming_ver2.png" class="car" alt="Rio Sedan">
+                                        </div>
+                                        <em class="name">Rio Sedan</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/rio.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_all_new_rio1.png" alt="Rio Hatchback">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio1_txt_ver2.png" class="txt" alt="Rio Hatchback" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_all_new_rio1_upcoming_ver2.png" class="car" alt="Rio Hatchback">
+                                        </div>
+                                        <em class="name">Rio Hatchback</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/cerato-forte.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_cerato1.png" alt="Cerato/Forte">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_cerato1_txt_ver2.png" class="txt" alt="Cerato/Forte upcoming" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_cerato1_upcoming_ver2.png" class="car" alt="Cerato/Forte upcoming">
+                                        </div>
+                                        <em class="name">Cerato/Forte</em>
+                                    </a>
+                                </li>
+
+
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_ceed1.png" alt="Ceed">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_ceed1_txt.png" class="txt" alt="Ceed upcoming2" data-width="94" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_ceed1_upcoming.png" class="car" alt="Ceed upcoming2">
+                                        </div>
+                                        <em class="name">Ceed</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/proceed.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_pro-ceed1.png" alt="ProCeed">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_pro-ceed1_txt.png" class="txt" alt="ProCeed upcoming2" data-width="142" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_pro-ceed1_upcoming.png" class="car" alt="ProCeed upcoming2">
+                                        </div>
+                                        <em class="name">ProCeed</em>
+                                    </a>
+                                </li>
+
+
+                                <!-- <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed.do">
+                                        <img src="/worldwide/images/vehicles/img_ceed1.png" alt="cee’d" />
+                                        <em class="name">cee’d</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed-3dr.do">
+                                        <img src="/worldwide/images/vehicles/img_pro-ceed1.png" alt="pro_cee’d" />
+                                        <em class="name">pro_cee’d</em>
+                                    </a>
+                                </li> -->
+
+                                <!-- <li data-group="group2">
+                                    <a href="/worldwide/vehicles/ceed-sportswagon.do">
+                                        <img src="/worldwide/images/vehicles/img_ceed-sw-sp1.png" alt="cee’d Sportswagon" />
+                                        <em class="name">cee’d Sportswagon</em>
+                                    </a>
+                                </li> -->
+
+                                <li data-group="group2"> <!-- 20190403 group2로 수정 -->
+                                    <a href="/worldwide/vehicles/optima.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_optima1.png" alt="Optima">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_optima1_txt.png" class="txt" alt="Optima upcoming2" data-width="115" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_optima1_upcoming.png" class="car" alt="Optima upcoming2">
+                                        </div>
+                                        <em class="name">Optima</em>
+                                    </a>
+                                </li>
+
+                                <!-- <li data-group="group4">
+                                    <a href="/worldwide/vehicles/all-new-optima-hybrid.do">
+                                        <img src="/worldwide/images/vehicles/img_all_new_optima_hybrid1.png" alt="Optima Hybrid" />
+                                        <em class="name">Optima Hybrid</em>
+                                    </a>
+                                </li> -->
+                                <li data-group="group4"> <!-- 20190403 group4로 수정 -->
+                                    <a href="/worldwide/vehicles/optima-hybrid.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_optima_hybrid1.png" alt="Optima Hybrid">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_optima_hybrid1_txt.png" class="txt" alt="Optima Hybrid upcoming2" data-width="138" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_optima_hybrid_upcoming.png" class="car" alt="Optima Hybrid upcoming2">
+                                        </div>
+                                        <em class="name">Optima Hybrid</em>
+                                    </a>
+                                </li>
+
+
+
+                                <!--  <li data-group="group2">
+                                    <a href="/worldwide/vehicles/all-new-cadenza.do">
+                                        <img src="/worldwide/images/vehicles/img_all_new_cadenza1.png" alt="Cadenza" />
+                                        <em class="name">Cadenza</em>
+                                    </a>
+                                </li> -->
+                                <!-- s:20191217 -->
+                                <li data-group="group2" class="new">
+                                    <a href="/worldwide/vehicles/cadenza.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_cadenza.png" alt="Cadenza">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_cadenza_txt.png" class="txt" alt="Cadenza upcoming2" data-width="138" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_cadenza_upcoming.png" class="car" alt="Cadenza upcoming2">
+                                        </div>
+                                        <em class="name">Cadenza</em>
+                                    </a>
+                                </li>
+                                <!-- e:20191217 -->
+
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/stinger.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_Stinger1.png" alt="Stinger">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_stinger1_txt_ver2.png" class="txt" alt="Stinger upcoming" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_Stinger1_upcoming_ver2.png" class="car" alt="Stinger upcoming">
+                                        </div>
+                                        <em class="name">Stinger</em>
+                                    </a>
+                                </li>
+                                <li data-group="group2">
+                                    <a href="/worldwide/vehicles/k900.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_K900.png" alt="K900">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_K900_txt_ver2.png" class="txt" alt="K900" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_K900_upcoming_ver2.png" class="car" alt="K900">
+                                        </div>
+                                        <em class="name">K900</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/stonic.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_stonic1.png" alt="stonic">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_stonic1_txt_ver2.png" class="txt" alt="stonic" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_stonic1_upcoming_ver2.png" class="car" alt="stonic">
+                                        </div>
+                                        <em class="name">Stonic</em>
+                                    </a>
+                                </li>
+                                <!--  <li data-group="group4">
+                                    <a href="/worldwide/vehicles/niro.do">
+                                        <img src="/worldwide/images/vehicles/img_niro1.png" alt="Niro" />
+                                        <em class="name">Niro</em>
+                                    </a>
+                                </li> -->
+
+                                <!-- s:20191118 eidt & add -->
+                  <li data-group="group4" class="new">
+                     <a href="/worldwide/vehicles/niro.do" class="upcoming2" style="background:none;">
+                     <img src="/worldwide/images/vehicles/img_niro_201911.png" alt="Niro">
+                     <div class="animate" style="display: none; opacity: 0; width: 0px; left: 50%;">
+                      <img src="/worldwide/images/vehicles/img_niro_201911_txt.png" class="txt" alt="Niro" data-width="138" data-height="47" style="top: 56px; left: 26.5px; width: 138px;">
+                      <img src="/worldwide/images/vehicles/img_niro_201911_2.png" class="car" alt="Niro" style="display: none;">
+                     </div>
+                     <em class="name">Niro<br>(Hybrid, Plug-in Hybrid)</em>
+                     </a>
+                  </li>
+                  <li data-group="group4" class="new">
+                     <a href="/worldwide/vehicles/e-niro.do" class="upcoming2" style="background:none;">
+                     <img src="/worldwide/images/vehicles/img_e-niro_201911.png" alt="Niro">
+                     <div class="animate" style="display: none; opacity: 0; width: 0px; left: 50%;">
+                      <img src="/worldwide/images/vehicles/img_e-niro_201911_txt.png" class="txt" alt="e-Niro" data-width="138" data-height="47" style="top: 56px; left: 26.5px; width: 138px;">
+                      <img src="/worldwide/images/vehicles/img_e-niro_201911_2.png" class="car" alt="e-Niro" style="display: none;">
+                     </div>
+                     <em class="name">e-Niro</em>
+                     </a>
+                  </li>
+                  <!-- e:20191118 -->
+
+
+                <!-- 20190326 new soul -->
+                <li data-group="group3" class="new">
+                    <a href="/worldwide/vehicles/soul.do" class="upcoming2" style="background:none;">
+                        <img src="/worldwide/images/vehicles/img_soul_201903_1.png" alt="Soul">
+                        <div class="animate">
+                            <img src="/worldwide/images/vehicles/img_soul_201903_txt.png" class="txt" alt="Soul" data-width="138" data-height="47">
+                            <img src="/worldwide/images/vehicles/img_soul_201903_2.png" class="car" alt="Soul">
+                        </div>
+                        <em class="name">Soul</em>
+                    </a>
+                </li>
+                <!-- //20190326 -->
+
+                <!-- 2019026 기존 soul 메뉴 삭제
+                                <li data-group="group3" class="new">
+                                    <a href="/worldwide/vehicles/all-new-soul.do" class="upcoming2">
+                                        <img src="/worldwide/images/vehicles/img_all_new_soul1.png" alt="Soul">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_all_new_soul1_txt.png" class="txt" alt="Soul upcoming" data-width="138" data-height="47" />
+                                            <img src="/worldwide/images/vehicles/img_all_new_soul_upcoming.png" class="car" alt="Soul upcoming" />
+                                        </div>
+                                        <em class="name">Soul</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/soul.do">
+                                        <img src="/worldwide/images/vehicles/img_soul1.png" alt="Soul" />
+                                        <em class="name">Soul</em>
+                                    </a>
+                                </li>
+                -->
+
+
+
+                                <!-- 20190802 add -->
+                                <li data-group="group4" class="new">
+                                  <a href="/worldwide/vehicles/e-soul.do" class="upcoming2" style="background:none;">
+                                    <img src="/worldwide/images/vehicles/img_soul1_ev.png" alt="e-Soul">
+                                    <div class="animate">
+                                      <img src="/worldwide/images/vehicles/img_soul1_txt.png" class="txt" alt="e-Soul" data-width="138" data-height="47">
+                                      <img src="/worldwide/images/vehicles/img_soul1_upcoming.png" class="car" alt="e-Soul">
+                                    </div>
+                                    <em class="name">e-Soul</em>
+                                  </a>
+                                </li>
+                                <!-- // 20190802 add -->
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/carens-rondo.do">
+                                        <img src="/worldwide/images/vehicles/img_carens-rondo1.png" alt="Carens/Rondo">
+                                        <em class="name">Carens/Rondo</em>
+                                    </a>
+                                </li>
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/carnival.do">
+                                        <img src="/worldwide/images/vehicles/img_carnival1.png" alt="Grand Carnival/Sedona">
+                                        <em class="name">Grand Carnival/Sedona</em>
+                                    </a>
+                                </li>
+
+                                <!--
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/all-new-sportage.do">
+                                        <img src="/worldwide/images/vehicles/img_new_sportage1.png" alt="Sportage" />
+                                        <em class="name">Sportage</em>
+                                    </a>
+                                </li>
+                                -->
+                                <li data-group="group3" class="new">
+                                    <a href="/worldwide/vehicles/sportage.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_sportage1.png" alt="Sportage">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_sportage1_txt.png" class="txt" alt="Sportage" data-width="138" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_sportage1_upcoming.png" class="car" alt="Sportage">
+                                        </div>
+                                        <em class="name">Sportage</em>
+                                    </a>
+                                </li>
+
+
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/sorento.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_sorento1.png" alt="Sorento">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_sorento1_txt_ver2.png" class="txt" alt="Sorento" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_sorento1_upcoming_ver2.png" class="car" alt="Sorento">
+                                        </div>
+                                        <em class="name">Sorento</em>
+                                    </a>
+                                </li>
+
+                                <li data-group="group3">
+                                    <a href="/worldwide/vehicles/mohave.do">
+                                        <img src="/worldwide/images/vehicles/img_mohave1.png" alt="Mohave">
+                                        <em class="name">Mohave</em>
+                                    </a>
+                                </li>
+                                <!--190514 add-->
+                                <li data-group="group3" class="new">
+                                  <a href="/worldwide/vehicles/telluride.do">
+                                    <img src="/worldwide/images/vehicles/img_telluride1.png" alt="Telluride">
+                                    <em class="name">Telluride</em>
+                                  </a>
+                                </li>
+                                <!--//190514 add-->
+                                 <!-- s:20190603 -->
+                                <!--  
+                                <li data-group="group3" class="new">
+                                  <a href="/worldwide/vehicles/unveiling-seltos.do" class="upcoming2">
+                                    <img src="/worldwide/images/vehicles/img_seltos.png" width="160" alt="Seltos">
+                                    <em class="name">Seltos</em>
+                                  </a>
+                                </li>
+                                -->
+
+
+                                  <!-- s:20191202 edit -->
+
+                                <li data-group="group3" class="new">
+                                    <a href="/worldwide/vehicles/seltos.do" class="upcoming2" style="background:none;">
+                                        <img src="/worldwide/images/vehicles/img_seltos_19120.png" alt="Seltos">
+                                        <div class="animate">
+                                            <img src="/worldwide/images/vehicles/img_seltos_txt.png" class="txt" alt="Seltos" data-width="150" data-height="47">
+                                            <img src="/worldwide/images/vehicles/img_seltos_191202_2.png" class="car" alt="Seltos">
+                                        </div>
+                                        <em class="name">Seltos</em>
+                                    </a>
+                                </li>
+
+                                 <!-- e:20191202 edit -->
+
+                                <!-- e:20190603 -->
+                                <li data-group="group5">
+                                    <a href="/worldwide/vehicles/k2500-k2700-k3000s-k4000g.do">
+                                        <img src="/worldwide/images/vehicles/img_k2700-k2500-k4000g1.png" alt="K2500/K2700/K3000S/K4000G">
+                                        <em class="name">K2500/K2700/<br>K3000S/K4000G</em>
+                                    </a>
+                                </li>
+                            </ul>"""
+        initial_soup = BeautifulSoup(initial_html, 'html5lib')
+        vehicles = initial_soup.select('ul.list_vehicles li')
+        for vehicle in vehicles:
+            model = vehicle.get_text().strip()
+            vehicle_link = 'https://www.kia.com' + vehicle.a['href']
+            print(vehicle_link)
+
+    def Hyundai_Gallery(self):
+        initial_url = 'https://www.hyundaiusa.com/us/en/vehicles'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('.vbws-car-image')
+        lines = []
+        for vehicle in vehicles:
+            vehicle_url = 'https://www.hyundaiusa.com' + vehicle.a['href'] + '/gallery'
+            year_model = vehicle.find_next(class_='vbws-car-meta')
+            year = year_model.find(class_='vbws-car-year').text.strip()
+            model = year_model.find(class_='vbws-car-name-compare').text.strip()
+            vehicle_url_soup = BeautifulSoup(requests.get(url=vehicle_url).content, 'html5lib')
+            medias = vehicle_url_soup.find_all('div', {'class': 'il-media-ratio'})
+            for media in medias:
+                if not media.img.has_attr('src'):
+                    continue
+                gallery_url = 'https:' + media.img['src']
+                section = media.find_parent('div', {'class': 'il'})['data-media-tag'].upper()
+                line = [year, 'Hyundai', model, section, gallery_url]
+                print(line)
+                if line not in lines:
+                    lines.append(line)
+        lines.sort(key=lambda x:(x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Hyundai_Gallery_2020.csv')
+
 
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.Jeep_Gallery()
+    features_2020.Hyundai_Gallery()
     ford = Ford()
     acura = Acura()
     audi = Audi()
