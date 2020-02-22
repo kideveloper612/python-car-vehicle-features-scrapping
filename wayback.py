@@ -4193,8 +4193,8 @@ class Features_2020:
                                     '.q-text.q-body1'):
                                 continue
                             description = \
-                            BeautifulSoup(requests.get(url=description_link).content, 'html.parser').select(
-                                '.q-text.q-body1')[0].text.strip()
+                                BeautifulSoup(requests.get(url=description_link).content, 'html.parser').select(
+                                    '.q-text.q-body1')[0].text.strip()
                             title = title_dom.text.strip()
                             if not title_dom.find_previous('img').has_attr('src'):
                                 continue
@@ -4844,7 +4844,7 @@ class Features_2020:
                 line = [next_year, 'Dodge', model, section, image_url]
                 print(line)
                 lines.append(line)
-        lines.sort(key=lambda x:(x[0]))
+        lines.sort(key=lambda x: (x[0]))
         self.chevrolet.write_csv_gallery(lines=lines, filename='Dodge_Gallery_2019_2020.csv')
 
     def Lexus_Gallery(self):
@@ -4889,7 +4889,8 @@ class Features_2020:
             year_model = link_soup.find('div', {'class': 'model-details-inner'})
             year = year_model.select('.model-name-text')[0].text[:4].strip()
             model = year_model.select('.model-name-text')[0].text[4:].strip()
-            gallery_url = 'https://www.jeep.com' + link_soup.select('.secondary-section-link-list > li:nth-child(2) a')[0]['href']
+            gallery_url = 'https://www.jeep.com' + \
+                          link_soup.select('.secondary-section-link-list > li:nth-child(2) a')[0]['href']
             gallery_url_soup = BeautifulSoup(requests.get(url=gallery_url).content, 'html5lib')
             print(gallery_url)
             data_props = gallery_url_soup.find('div', attrs={'data-component': 'Gallery'})['data-props']
@@ -4914,13 +4915,14 @@ class Features_2020:
                 data_props_json = json.loads(data_props)
                 assets = data_props_json['galleryData']['filterableList']['assets']
                 for asset in assets:
-                    gallery_url = 'https://www.jeep.com' + asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
+                    gallery_url = 'https://www.jeep.com' + asset['mediaContent']['media']['mediaAsset']['image']['lg'][
+                        0]
                     section = asset['categories'][0]
                     line = [next_year, 'Jeep', model, section.upper(), gallery_url]
                     if line not in lines:
                         print(line)
                         lines.append(line)
-        lines.sort(key=lambda x:(x[0], x[2], x[3]))
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
         self.chevrolet.write_csv_gallery(lines=lines, filename='Jeep_Gallery_2019_2020.csv')
 
     def Chrysler_Gallery(self):
@@ -4953,19 +4955,22 @@ class Features_2020:
             assets = data_props_json['galleryData']['filterableList']['assets']
             for asset in assets:
                 if 'media' in asset['mediaContent']:
-                    gallery_url = 'https://www.chrysler.com' + asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
+                    gallery_url = 'https://www.chrysler.com' + \
+                                  asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
                     section = asset['categories'][0]
                     line = [year, 'Chrysler', model, section.upper(), gallery_url]
                     print(line)
                     lines.append(line)
                 elif 'activeVideoThumb' in asset['mediaContent']:
-                    thumb_image = 'https://www.chrysler.com' + asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['thumbImage']['lg'][0]
-                    video_url = 'https://www.youtube.com/watch?v=' + asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['videoSrc']
+                    thumb_image = 'https://www.chrysler.com' + \
+                                  asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['thumbImage']['lg'][0]
+                    video_url = 'https://www.youtube.com/watch?v=' + \
+                                asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['videoSrc']
                     section = asset['categories'][0]
                     line = [year, 'Chrysler', model, section.upper(), thumb_image, video_url]
                     print(line)
                     lines.append(line)
-        lines.sort(key=lambda x:(x[0], x[2], x[3]))
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
         self.chevrolet.write_csv_gallery(lines=lines, filename='Chrysler_Gallery_2019_2020.csv')
 
     def Honda_Gallery(self):
@@ -5034,7 +5039,7 @@ class Features_2020:
                         line = [current_year, 'Honda', model, section, gallery_url]
                         print(line)
                         lines.append(line)
-        lines.sort(key=lambda x:(x[0], x[2], x[3]))
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
         self.chevrolet.write_csv_gallery(lines=lines, filename='Honda_Gallery_2019_2020.csv')
 
     def Kia_Gallery(self):
@@ -5406,14 +5411,445 @@ class Features_2020:
                 print(line)
                 if line not in lines:
                     lines.append(line)
-        lines.sort(key=lambda x:(x[0], x[2], x[3]))
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
         self.chevrolet.write_csv_gallery(lines=lines, filename='Hyundai_Gallery_2020.csv')
+
+    def Infiniti_Gallery(self):
+        initial_url = 'https://www.infinitiusa.com/vehicles/new-vehicles.html'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).text, 'html.parser')
+        vehicles = initial_soup.find_all('h3', {'class': 'car-title'})
+        lines = []
+        for vehicle in vehicles:
+            year = vehicle.text[:5].strip()
+            model = vehicle.text[5:].strip()
+            link = 'https://www.infinitiusa.com' + vehicle.a['href'].replace('.html', '/gallery.html')
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            images = link_soup.find_all('div', {'class': 'c_239-2 mosaic-gallery'})
+            print(link)
+            for image in images:
+                gallery_url = 'https://www.infinitiusa.com' + image.img['src']
+                section = image.find_previous('h2', {'class': 'heading'}).text.strip()
+                line = [year, 'Infiniti', model, section.upper(), gallery_url]
+                if line not in lines:
+                    lines.append(line)
+                    print(line)
+            videos = link_soup.find_all('div', {'itemprop': 'video'})
+            for video in videos:
+                if video.next_element.next_element.name == 'meta':
+                    thumbnail_url = 'https:' + video.find('meta', {'itemprop': 'thumbnailURL'})['content']
+                    if 'https:' not in video.a['href']:
+                        video_url = 'https:' + video.a['href']
+                    else:
+                        video_url = video.a['href']
+                    section = 'VIDEOS'
+                    line = [year, 'Infiniti', model, section, thumbnail_url, video_url]
+                    print(line)
+                elif video.next_element.next_element.name == 'figure':
+                    thumbnail_url = 'https://wwww.infinitiusa.com' + video.picture.source['srcset']
+                    video_url = video.video.source['src']
+                    section = 'VIDEOS'
+                    line = [year, 'Infiniti', model, section, thumbnail_url, video_url]
+                    print(line)
+                    lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Infiniti_Gallery_2020.csv')
+
+    def Fiat_Gallery(self):
+        initial_url = 'https://www.fiatusa.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('[class="navigation-card-wrapper gcss-theme-light isImageCard sdp-grid"]')
+        lines = []
+        for vehicle in vehicles:
+            vehicle_link = 'https://www.fiatusa.com' + vehicle.a['href']
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            detail_inner = vehicle_link_soup.find('div', {'class': 'model-details-inner'})
+            year_model = detail_inner.find('div', {'class': 'model-name-text'}).text
+            year = year_model[:4]
+            model = year_model[4:].strip()
+            gallery_link = vehicle_link.replace('.html', '/gallery.html')
+            if 'abarth' not in gallery_link:
+                print(gallery_link)
+                gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html5lib')
+                data_props = gallery_link_soup.find('div', {'data-component': 'Gallery'})['data-props']
+                data_props_json = json.loads(data_props)
+                assets = data_props_json['galleryData']['filterableList']['assets']
+                for asset in assets:
+                    gallery_url = 'https://www.fiatusa.com' + \
+                                  asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
+                    section = asset['categories'][-1].upper()
+                    line = [year, 'Fiat', model, section, gallery_url]
+                    print(line)
+                    if line not in lines:
+                        lines.append(line)
+            if detail_inner.find('div', {'class': 'model-year-link'}):
+                year_link = detail_inner.find('div', {'class': 'model-year-link'})
+                next_year = year_link.text.strip()
+                url = 'https://www.fiatusa.com' + year_link.a['href'].replace('.html', '/gallery.html')
+                print(url)
+                url_soup = BeautifulSoup(requests.get(url=url).content, 'html5lib')
+                data_props = url_soup.find('div', {'data-component': 'Gallery'})['data-props']
+                data_props_json = json.loads(data_props)
+                assets = data_props_json['galleryData']['filterableList']['assets']
+                for asset in assets:
+                    gallery_url = 'https://www.fiatusa.com' + \
+                                  asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
+                    section = asset['categories'][-1].upper()
+                    line = [next_year, 'Fiat', model, section, gallery_url]
+                    if line not in lines:
+                        print(line)
+                        lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Fiat_Gallery_2019_2020.csv')
+
+    def Mazda_Gallery(self):
+        links = ['https://www.mazdausa.com/vehicles/2020-cx-3', 'https://www.mazdausa.com/vehicles/cx-3',
+                 'https://www.mazdausa.com/vehicles/cx-30', 'https://www.mazdausa.com/vehicles/2020-cx-5',
+                 'https://www.mazdausa.com/vehicles/cx-5', 'https://www.mazdausa.com/vehicles/cx-5-diesel',
+                 'https://www.mazdausa.com/vehicles/2020-cx-9', 'https://www.mazdausa.com/vehicles/cx-9',
+                 'https://www.mazdausa.com/vehicles/2020-mazda3-sedan',
+                 'https://www.mazdausa.com/vehicles/mazda3-sedan',
+                 'https://www.mazdausa.com/vehicles/2020-mazda3-hatchback',
+                 'https://www.mazdausa.com/vehicles/mazda3-hatchback', 'https://www.mazdausa.com/vehicles/mazda6',
+                 'https://www.mazdausa.com/vehicles/2019-mazda6', 'https://www.mazdausa.com/vehicles/mx-5-miata',
+                 'https://www.mazdausa.com/vehicles/2018-mx-5-miata', 'https://www.mazdausa.com/vehicles/mx-5-miata-rf',
+                 'https://www.mazdausa.com/vehicles/2018-mx-5-miata-rf',
+                 'https://www.mazdausa.com/mazda6-signature-skyactivd']
+        lines = []
+        for link in links:
+            link = link + '/gallery'
+            link_soup = BeautifulSoup(requests.get(url=link).content, 'html5lib')
+            if link_soup.find('div', {'class': 'component-navigation-1__title'}):
+                year_model = link_soup.find('div', {'class': 'component-navigation-1__title'}).text.strip()
+                year = year_model[:4].strip()
+                model = year_model[4:].strip()
+                images = link_soup.find_all('div', {'class': 'image-ratio-wrapper'})
+                for image in images:
+                    if image.img.has_attr('src'):
+                        gallery_url = 'https://www.mazdausa.com' + image.img['src']
+                    elif image.img.has_attr('srcset'):
+                        gallery_url = 'https://www.mazdausa.com' + image.img['srcset']
+                    elif image.img.has_attr('data-src'):
+                        gallery_url = 'https://www.mazdausa.com' + image.img['data-src']
+                    else:
+                        gallery_url = 'https://www.mazdausa.com' + image.img['data-srcset']
+                    line = [year, 'Mazda', model, '', gallery_url]
+                    if line not in lines:
+                        print(line)
+                        lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Mazda_Gallery_2019_2020.csv')
+
+    def RAM_Gallery(self):
+        lines = []
+        initial_url = 'https://www.ramtrucks.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.find_all('div',
+                                         {'class': 'navigation-card-wrapper gcss-theme-light isImageCard sdp-grid'},
+                                         limit=7)
+        for vehicle in vehicles:
+            vehicle_link = 'https://www.ramtrucks.com' + vehicle.a['href'].replace('.html', '/gallery.html')
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            details_inner = vehicle_link_soup.find('div', {'class': 'model-details-inner'})
+
+            if 'new' in details_inner.find('div', {'class': 'model-name-text'}).text:
+                year_model = details_inner.find('div', {'class': 'model-name-text'}).text.strip()[9:]
+            else:
+                year_model = details_inner.find('div', {'class': 'model-name-text'}).text.strip()
+            year = year_model[:4]
+            model = year_model[4:].strip()
+            data_props = vehicle_link_soup.find('div', {'data-component': 'Gallery'})['data-props']
+            data_props_json = json.loads(data_props)
+            assets = data_props_json['galleryData']['filterableList']['assets']
+            for asset in assets:
+                if 'media' in asset['mediaContent']:
+                    gallery_url = 'https://www.ramtrucks.com' + \
+                                  asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
+                    section = asset['categories'][-1].upper()
+                    if year == '019' or year == '019 ':
+                        year = '2019'
+                    line = [year, 'RAM', model, section, gallery_url]
+                    if line not in lines:
+                        print(line)
+                        lines.append(line)
+                elif 'activeVideoThumb' in asset['mediaContent']:
+                    thumbnail_url = 'https://www.ramtrucks.com' + \
+                                    asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['thumbImage']['lg'][0]
+                    video_url = 'https://www.youtube.com/watch?v=' + \
+                                asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['mediaModal']['mediaContent'][
+                                    'videoSrc']
+                    section = asset['categories'][-1].upper()
+                    if year == '019' or year == '019 ':
+                        year = '2019'
+                    line = [year, 'RAM', model, section, thumbnail_url, video_url]
+                    if line not in lines:
+                        print(line)
+                        lines.append(line)
+            if vehicle_link_soup.find('div', {'class': 'model-year-link'}):
+                year_link = vehicle_link_soup.find('div', {'class': 'model-year-link'}).a
+                next_year = year_link.text.strip()
+                next_link = 'https://www.ramtrucks.com' + year_link['href'].replace('.html', '/gallery.html')
+                print(next_link)
+                next_link_soup = BeautifulSoup(requests.get(url=next_link).content, 'html5lib')
+                data_props = next_link_soup.find('div', {'data-component': 'Gallery'})['data-props']
+                data_props_json = json.loads(data_props)
+                assets = data_props_json['galleryData']['filterableList']['assets']
+                for asset in assets:
+                    if 'media' in asset['mediaContent']:
+                        gallery_url = 'https://www.ramtrucks.com' + \
+                                      asset['mediaContent']['media']['mediaAsset']['image']['lg'][0]
+                        section = asset['categories'][-1].upper()
+                        if year == '019' or year == '019 ':
+                            year = '2019'
+                        line = [next_year, 'RAM', model, section, gallery_url]
+                        if line not in lines:
+                            print(line)
+                            lines.append(line)
+                    elif 'activeVideoThumb' in asset['mediaContent']:
+                        thumbnail_url = 'https://www.ramtrucks.com' + \
+                                        asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['thumbImage']['lg'][0]
+                        video_url = 'https://www.youtube.com/watch?v=' + \
+                                    asset['mediaContent']['activeVideoThumb']['thumbnails'][0]['mediaModal'][
+                                        'mediaContent']['videoSrc']
+                        section = asset['categories'][-1].upper()
+                        if year == '019' or year == '019 ':
+                            year = '2019'
+                        line = [next_year, 'RAM', model, section, thumbnail_url, video_url]
+                        if line not in lines:
+                            print(line)
+                            lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='RAM_Gallery_2019_2020.csv')
+
+    def Acura_Gallery(self):
+        initial_url = 'https://www.acura.com/'
+        initial_soup  =BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.find_all('a', {'class': 'acr-nav-vehicles__card'})
+        lines = []
+        for vehicle in vehicles:
+            if 'nsx.acura.com' in vehicle['href']:
+                vehicle_link = vehicle['href'] + '/gallery'
+            else:
+                vehicle_link = 'https://www.acura.com' + vehicle['href'] + '/gallery'
+            model = vehicle_link.split('/')[-2].upper()
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            images = vehicle_link_soup.select('.acr-gallery__grid.js-gallery-grid > a')
+            print(vehicle_link)
+            for image in images:
+                if image.img.has_attr('src'):
+                    gallery_url = 'https://www.acura.com' + image.img['src']
+                    section = image.img['src'].split('/')[-2].upper()
+                elif image.img.has_attr('srcset'):
+                    gallery_url = 'https://www.acura.com' + image.img['srcset']
+                    section = image.img['srcset'].split('/')[-2].upper()
+                elif image.img.has_attr('data-src'):
+                    gallery_url = 'https://www.acura.com' + image.img['data-src']
+                    section = image.img['data-src'].split('/')[-2].upper()
+                elif image.img.has_attr('data-srcset'):
+                    gallery_url = 'https://www.acura.com' + image.img['data-srcset']
+                    section = image.img['data-srcset'].split('/')[-2].upper()
+                else:
+                    print(image.img)
+                    exit(5)
+                line = ['2020', 'Acura', model, section, gallery_url]
+                if line not in lines:
+                    print(line)
+                    lines.append(line)
+            idx = vehicle_link.index('acura.com/')
+            previous_link = 'https://www.acura.com/2019/' + vehicle_link[idx+10:]
+            previous_link_soup = BeautifulSoup(requests.get(url=previous_link).content, 'html5lib')
+            images = previous_link_soup.select('.acr-gallery__grid.js-gallery-grid > a')
+            print(previous_link)
+            for image in images:
+                if image.img.has_attr('src'):
+                    gallery_url = 'https://www.acura.com' + image.img['src']
+                    section = image.img['src'].split('/')[-2].upper()
+                elif image.img.has_attr('srcset'):
+                    gallery_url = 'https://www.acura.com' + image.img['srcset']
+                    section = image.img['srcset'].split('/')[-2].upper()
+                elif image.img.has_attr('data-src'):
+                    gallery_url = 'https://www.acura.com' + image.img['data-src']
+                    section = image.img['data-src'].split('/')[-2].upper()
+                elif image.img.has_attr('data-srcset'):
+                    gallery_url = 'https://www.acura.com' + image.img['data-srcset']
+                    section = image.img['data-srcset'].split('/')[-2].upper()
+                else:
+                    print(image.img)
+                    exit(5)
+                line = ['2019', 'Acura', model, section, gallery_url]
+                if line not in lines:
+                    print(line)
+                    lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Acura_Gallery_2019_2020.csv')
+
+    def Audi_Gallery(self):
+        initial_url = 'https://www.audiusa.com/models'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.find_all('li', {'class': 'modelslist__model'})
+        for vehicle in vehicles:
+            vehicle_link = 'https://www.audiusa.com' + vehicle.a['href']
+            year_model = vehicle.find('h5', {'class': 'name'}).text.strip()
+            year = year_model[:4]
+            model = year_model[4:].strip()
+            print(year, model, vehicle_link)
+
+    def BMW_Gallery(self):
+        initial_url = 'https://www.bmwusa.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.find_all('div', {'class': 'globalnav-primary-vehicles__car'})
+        gallery_links = []
+        lines = []
+        for vehicle in vehicles:
+            vehicle_link = 'https://www.bmwusa.com' + vehicle.a['href']
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            print(vehicle_link)
+            if not vehicle_link_soup.find(class_='globalnav-local__title'):
+                continue
+            vehicle_link_soup.find(class_='globalnav-local__title').span.decompose()
+            model = vehicle_link_soup.find(class_='globalnav-local__title').text.replace('BMW', '').strip()
+            if vehicle_link_soup.select('.headline-5--bold  a.link-cmp__anchor'):
+                link_cmps = vehicle_link_soup.select('.headline-5--bold  a.link-cmp__anchor')
+                for link_cmp in link_cmps:
+                    if link_cmp.text.strip() == 'Gallery':
+                        gallery_link = 'https://www.bmwusa.com' + link_cmp['href']
+                        break
+                if gallery_link and gallery_link not in gallery_links:
+                    gallery_links.append(gallery_link)
+                    gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html5lib')
+                    images = gallery_link_soup.find_all('div', {'class': 'carousel-component__slide'})
+                    for image in images:
+                        if image.img:
+                            if image.img.has_attr('src'):
+                                image_url = 'https://www.bmwusa.com' + image.img['src']
+                            elif image.img.has_attr('srcset'):
+                                image_url = 'https://www.bmwusa.com' + image.img['srcset']
+                            else:
+                                image_url = 'https://www.bmwusa.com' + image.img['data-src']
+                            section = image_url.split('/')[-2].upper()
+                            line = ['2020', 'BMW', model, section, image_url]
+                            if line not in lines:
+                                print(line)
+                                lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='BMW_Gallery_2020.csv')
+
+    def Buick_Gallery(self):
+        initial_url = 'https://www.buick.com/navigation/navigation-flyouts/vehicles.html'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('.q-nav-vehicle-selector-content a')
+        lines = []
+        for vehicle in vehicles:
+            vehicle_link = 'https://www.buick.com' + vehicle['href']
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            if vehicle_link_soup.find('li', {'class': 'q-year-toggle-list-item active'}):
+                year = vehicle_link_soup.find('li', {'class': 'q-year-toggle-list-item active'}).text.strip()
+                model = vehicle_link_soup.find(class_='q-js-button-text hide-for-large-down').text.strip()
+            else:
+                year = vehicle_link_soup.find(class_='q-js-button-text hide-for-large-down').text.strip()[:4]
+                model = vehicle_link_soup.find(class_='q-js-button-text hide-for-large-down').text.strip()[4:].strip()
+            gallery_link = 'https://www.buick.com' + vehicle_link_soup.select('div.q-sibling-nav-container li > a')[1]['href'].replace('features', 'gallery')
+            gallery_link_soup = BeautifulSoup(requests.get(url=gallery_link).content, 'html5lib')
+            gallery_modal_link = 'https://www.buick.com' + gallery_link_soup.find('div', {'class': 'clearfix q-mod q-mod-gallery-preview'})['data-gallery-layer'] + '/jcr:content/content.html'
+            gallery_modal_soup = BeautifulSoup(requests.get(url=gallery_modal_link).content, 'html5lib')
+            images = gallery_modal_soup.select('.q-slider-item picture img')
+            print(gallery_link)
+            for image in images:
+                gallery_url = 'https://www.buick.com' + image['src']
+                section = gallery_url.split('/')[-3].upper()
+                line = [year, 'Buick', model, section, gallery_url]
+                if line not in lines:
+                    print(line)
+                    lines.append(line)
+        lines.sort(key=lambda x: (x[0], x[2], x[3]))
+        self.chevrolet.write_csv_gallery(lines=lines, filename='Buick_Gallery_2019_2020.csv')
+
+    def Multi_Gallery(self):
+        csv_add_header = [['YEAR', 'MAKE', 'MODEL', 'SECTION', 'TITLE', 'DESCRIPTION', 'TUUMBNAIL_IMAGE', 'SMALL_IMAGE', 'MEDIUM_IMAGE', 'LARGE_IMAGE', 'HUGE_IAMGE']]
+        def write_direct_csv(lines, filename):
+            with open('output/addition_gallery/%s' % filename, 'a', encoding="utf-8", newline='') as csv_file:
+                writer = csv.writer(csv_file, delimiter=',')
+                writer.writerows(lines)
+            csv_file.close()
+
+        def write_csv_gallery(lines, filename):
+            if not os.path.isdir('output/addition_gallery'):
+                os.mkdir('output/addition_gallery')
+            if not os.path.isfile('output/addition_gallery/%s' % filename):
+                write_direct_csv(lines=csv_add_header, filename=filename)
+            write_direct_csv(lines=lines, filename=filename)
+
+        Make_list = ['Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Fiat', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus' 'Lincoln', 'Mazda', 'Mercedes Benz', 'Nissan', 'RAM', 'Subaru', 'Toyota', 'Volvo ']
+        initial_url = 'https://www.thecarconnection.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        makes = initial_soup.select('#new-window .menu-column > a')
+        count = 0
+        for make in makes:
+            count += 1
+            if count < 38:
+                continue
+            make_link = 'https://www.thecarconnection.com' + make['href']
+            make_name = make.text.strip()
+            # if make_name not in Make_list:
+            #     continue
+            make_link_soup = BeautifulSoup(requests.get(url=make_link).content, 'html5lib')
+            vehicles = make_link_soup.select('#main-column .make > a')
+            for vehicle in vehicles:
+                model_name = vehicle.parent.find('div', {'class': 'name'}).text.strip()
+                vehicle_link = 'https://www.thecarconnection.com' + vehicle['href']
+                vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+                years_link = vehicle_link_soup.find('div', {'class': 'year-selector-container year-less'}).find_all('a', {'class': 'btn'})
+                for year_link in years_link:
+                    real_yaer_link = 'https://www.thecarconnection.com' + year_link['href']
+                    print(real_yaer_link)
+                    year = year_link.text.strip()
+                    if int(year) < 2010:
+                        continue
+                    real_yaer_link_soup = BeautifulSoup(requests.get(url=real_yaer_link).content, 'html5lib')
+                    if real_yaer_link_soup.find('div', {'class': 'gallery'}):
+                        data_props = real_yaer_link_soup.find('div', {'class': 'gallery'})['data-model']
+                        data_props_json = json.loads(data_props)
+                        for data_json in data_props_json:
+                            gallery_title = data_json['title']
+                            gallery_description = data_json['description']
+                            thumb_url = data_json['images']['thumb']['url']
+                            small_url = data_json['images']['small']['url']
+                            medium_url = data_json['images']['medium']['url']
+                            large_url = data_json['images']['large']['url']
+                            huge_url = data_json['images']['huge']['url']
+                            if data_json['isExt'] == True:
+                                section = 'EXTERIOR'
+                            elif data_json['isExt'] ==False:
+                                section = 'INTERIOR'
+                            line = [year, make_name, model_name.replace(make_name, '').strip(), section, large_url]
+                            print(line)
+                            self.chevrolet.write_csv_gallery(lines=[line], filename='%s_Gallery.csv' % make_name.split(' ')[0])
+                            addition_line = [year, make_name, model_name.replace(make_name, '').strip(), section, gallery_title, gallery_description, thumb_url, small_url, medium_url, large_url, huge_url]
+                            print(addition_line)
+                            write_csv_gallery(lines=[addition_line], filename='%s_Addition_Gallery.csv' % make_name.split(' ')[0])
+
+    def Collect(self):
+        path = 'output\Gallery'
+        for dirpath, dnames, fnames in os.walk(path):
+            for dname in dnames:
+                dir_path = os.path.join(path, dname)
+                for d_path, d_names, f_names in os.walk(dir_path):
+                    lines = []
+                    for f_name in f_names:
+                        file_path = os.path.join(d_path, f_name)
+                        read_lines = self.chevrolet.read_csv(filepath=file_path)
+                        for read_line in read_lines:
+                            if read_line not in lines:
+                                lines.append(read_line)
+                    lines.sort(key=lambda x: (x[0], x[2], x[3]))
+                    file_name = d_path.split('\\')[-1] + '.csv'
+                    print(file_name)
+                    self.chevrolet.write_csv_gallery(lines=lines, filename=file_name)
 
 
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.Hyundai_Gallery()
+    features_2020.Audi_Gallery()
     ford = Ford()
     acura = Acura()
     audi = Audi()
