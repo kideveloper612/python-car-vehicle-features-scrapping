@@ -5683,15 +5683,15 @@ class Features_2020:
         self.chevrolet.write_csv_gallery(lines=lines, filename='Acura_Gallery_2019_2020.csv')
 
     def Audi_Gallery(self):
-        initial_url = 'https://www.audiusa.com/models'
+        initial_url = 'https://media.audiusa.com/'
         initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
-        vehicles = initial_soup.find_all('li', {'class': 'modelslist__model'})
+        vehicles = initial_soup.find_all('div', {'class': 'dropdown-zeus__item'})
         for vehicle in vehicles:
-            vehicle_link = 'https://www.audiusa.com' + vehicle.a['href']
-            year_model = vehicle.find('h5', {'class': 'name'}).text.strip()
-            year = year_model[:4]
-            model = year_model[4:].strip()
-            print(year, model, vehicle_link)
+            vehicle_link = 'https://media.audiusa.com' + vehicle.a['href']
+            model = vehicle.a.text.strip()
+            vehicle_link_soup = BeautifulSoup(requests.get(url=vehicle_link).content, 'html5lib')
+            gallery_link = 'https://media.audiusa.com' + vehicle_link_soup.find('ul', {'class': 'cf menu-venus'}).find('a', text=re.compile('Gallery'))['href']
+            print(model, gallery_link)
 
     def BMW_Gallery(self):
         initial_url = 'https://www.bmwusa.com/'
