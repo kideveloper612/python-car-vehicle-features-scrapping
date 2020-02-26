@@ -5849,7 +5849,7 @@ class Features_2020:
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.Audi_Gallery()
+    features_2020.Collect()
     ford = Ford()
     acura = Acura()
     audi = Audi()
