@@ -1,7 +1,7 @@
 import requests
 import csv
 import json
-
+import urllib
 from bs4 import BeautifulSoup
 import os
 import re
@@ -5846,10 +5846,111 @@ class Features_2020:
                     self.chevrolet.write_csv_gallery(lines=lines, filename=file_name)
 
 
+class Dealership:
+    def __init__(self):
+        self.csv_header = [['NAME', 'TITLE', 'IMAGE_URL', 'EMAIL', 'PHONE']]
+
+    def write_direct_csv(self, lines, filename):
+        with open('output/%s' % filename, 'a', encoding="utf-8", newline='') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',')
+            writer.writerows(lines)
+        csv_file.close()
+
+    def write_csv(self, lines, filename):
+        if not os.path.isdir('output'):
+            os.mkdir('output')
+        if not os.path.isfile('output/%s' % filename):
+            self.write_direct_csv(lines=self.csv_header, filename=filename)
+        self.write_direct_csv(lines=lines, filename=filename)
+
+    def Chevrolet_Dealer(self):
+        initial_url = 'https://www.paddockchevrolet.com/MeetOurDepartments'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        sections = initial_soup.find_all('p', attrs={'itemprop': 'jobTitle'})
+        for section in sections:
+            title = section.getText()
+            name = section.find_previous('h4').text.strip()
+            image = section.find_next('div', {'class': 'media'}).img['data-src']
+            email_phone = section.find_next('div', {'class': 'tertiary'})
+            phone, email = '', ''
+            if email_phone.find('a', {'data-linkid': 'Phone'}):
+                phone = email_phone.find('a', {'data-linkid': 'Phone'}).text.strip()
+            if email_phone.find('a', {'data-linkid': 'Email'}):
+                email = email_phone.find('a', {'data-linkid': 'Email'})['href'].strip()[7:]
+            line = [name, title, image, email, phone]
+            print(line)
+            self.write_csv(lines=[line], filename='Dealership_Chevrolet.csv')
+
+    def Ford_Dealer(self):
+        initial_url = 'https://www.lakelandautomall.com/staff#FordSalesDepartment'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        all_dealer_soup = initial_soup.find_all('div', {'class': re.compile('column clearfix ALL')})
+        for dealer_soup in all_dealer_soup:
+            data_id = dealer_soup.find('a', {'class': 'staff-directory-link'})['data-id']
+            dealer_link = 'https://www.lakelandautomall.com/raw-getStaff'
+            dealer_data = requests.post(url=dealer_link, data={"id": data_id})
+            soup = BeautifulSoup(dealer_data.content, 'html5lib')
+            image = soup.img['src']
+            name = soup.find('div', {'class': 'staff-name'}).text
+            title = soup.find('div', {'class': 'staff-title'}).text
+            if soup.find(class_='staff-phone'):
+                phone = soup.find(class_='staff-phone').text
+            else:
+                phone = ''
+            email = soup.find(class_='staff-email').text
+            line = [name, title, image, email, phone]
+
+            self.write_csv(lines=[line], filename='Dealer.csv')
+
+            print(line)
+
+class Collect_Image:
+    def __init__(self):
+        pass
+
+    def get_ford_images(self):
+        file_names = []
+        count = 1
+        initial_url = 'https://www.ford.com/'
+        initial_soup = BeautifulSoup(requests.get(url=initial_url).content, 'html5lib')
+        vehicles = initial_soup.select('.vehicle-list-item .image img')
+        for vehicle in vehicles:
+            image_url = "https://www.ford.com" + vehicle['src']
+            file_name = "images/" + vehicle.find_parent(class_='vehicle-tile').find(class_='year').text.replace('2019', '').replace('2020-2021', '').replace('2020', '').replace('2021', '').strip() + '.png'
+            file_name = file_name.replace(' ', '_')
+            if file_name in file_names:
+                file_name = file_name.replace('.png', '%s.png' % str(count))
+                count += 1
+            file_names.append(file_name)
+            import urllib.request
+            urllib.request.urlretrieve(image_url, file_name)
+            print(file_name)
+
+    def get_dealerRater(self):
+        query_dict = (
+            ('q', 'lotshot+bommarito+toyota+site:dealerrater.com'),
+            ('rlz', '1C1CHBD_enUS847US848'),
+            ('source', 'lnms'),
+            ('tbm', 'isch'),
+            ('sa', 'X'),
+            ('ved', '2ahUKEwij-b_svoboAhXRX80KHRnbDvkQ_AUoA3oECAYQBQ'),
+            ('biw', '1236'),
+            ('bih', '568#imgrc=XEagKjBWpGJpWM')
+        )
+        initial_url = 'https://www.google.com.hk/search' + urllib.parse.urlencode(query_dict)
+        test = 'https://www.google.com.hk/search?q=lotshot+chevrolet+site:dealerrater.com&newwindow=1&safe=strict&sxsrf=ALeKk03B_d5TS-PPXtYgIEDakTlritBx0A:1583592918807&source=lnms&tbm=isch&sa=X&ved=2ahUKEwjJp5Orz4joAhWMGqYKHXGnAAUQ_AUoAXoECAsQAw&biw=1920&bih=937'
+        res = requests.request('GET', url=test).content
+        print(res)
+
+
+
 print("=======================Start=============================")
 if __name__ == '__main__':
     features_2020 = Features_2020()
-    features_2020.Collect()
+    # features_2020.Collect()
+    dealership = Dealership()
+    collect = Collect_Image()
+    collect.get_dealerRater()
     ford = Ford()
     acura = Acura()
     audi = Audi()
